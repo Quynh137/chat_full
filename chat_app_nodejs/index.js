@@ -31,6 +31,6 @@ connectDB();
 
 // Connection to Socket Server
 connectSocket();
-
+console.log("hjhj");
 // Socket connection port
 app.listen(PORT);

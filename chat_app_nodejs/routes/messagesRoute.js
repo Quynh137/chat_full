@@ -1,10 +1,10 @@
 const express = require("express");
 const { create, page, upload, chats, unmessage, remove, forwardMessage } = require("../controllers/messagesController");
-const media = require('../core/media');
+const media = require('../middleware/media');
 
 const router = express.Router();
 
-router.post("/upload", media.array('media'),upload);
+router.post("/upload", media.array('files[]'),upload);
 router.post("/create", create);
 router.get("/page", page);
 router.get("/chats", chats);

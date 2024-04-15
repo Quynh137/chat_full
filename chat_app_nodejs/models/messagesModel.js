@@ -14,6 +14,7 @@ const MessagesSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Conversations",
     },
+    files: { type: Array },
     type: {
       type: String,
       enum: ["TEXT", "FILES", 'VOICE'],

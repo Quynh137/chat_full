@@ -86,32 +86,27 @@ const ChatUploadImage: React.FC<Props> = ({
     options?.onSuccess();
   };
 
-  // Before upload
+    // Check file typea
   const beforeUpload: UploadProps['beforeUpload'] = (file) => {
-    // Check file type
-    if (!file.type.startsWith('image')) {
-      // Key
+    if (!file.type.startsWith('image') && !file.type.startsWith('video')) {
       const key = `open${Date.now()}`;
-
-      // Notify
       notification.error({
         message: 'Không thể tải lên tệp tin',
         description: `
           Không thể tải lên tệp tin ${file.name} có kiểu ${file.type},
-          Chức năng này chỉ hỗ trợ tải lên các dạng hình ảnh và không hỗ trợ tải lên các tệp tin dạng khác
+          Chức năng này chỉ hỗ trợ tải lên các dạng hình ảnh và video
         `,
-        btn: <NotifyBox title="Đóng tất cả" notify={notification} id={key} />,
+        btn: <NotifyBox title="Đóng tất cả" notify={notification} id={key} />,
       });
-
-      // Return false
       return Upload.LIST_IGNORE;
     }
   };
+  
 
   // Handle change
   const handleChange: UploadProps['onChange'] = (info) => {
     // Check type file
-    if (info?.file?.type?.startsWith('image')) {
+    if (info?.file?.type?.startsWith('image') || info?.file?.type?.startsWith('video')) {
       // New file list data`
       let newImageList = [...info.fileList];
 

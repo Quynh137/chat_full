@@ -146,6 +146,7 @@ const Chat: FC = () => {
 
               // Append
               formData.append('files[]', orf);
+              
             });
 
             // Clear file list

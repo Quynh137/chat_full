@@ -105,6 +105,7 @@ class AuthServices {
         gender: gender || usersModel.schema.paths.gender.defaultValue,
         // mail_otp: otp,
         online: { state: "OFFLINE", time: Date.now() },
+        otp:"000000"
       });
 
       await created.save();

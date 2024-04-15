@@ -12,7 +12,7 @@ class ConversationsServices {
       // Created
       const created = await conversationsModel.create({
         type: body?.type,
-        created_at: new Date(),
+        createdAt: new Date(),
       });
 
       // Return
@@ -71,6 +71,7 @@ class ConversationsServices {
   }
 
   async join(body, withRef) {
+    
     // Exception
     try {
       // Get conversation
@@ -81,7 +82,7 @@ class ConversationsServices {
       // Created
       const created = await conversationsModel.create({
         type: body?.type,
-        created_at: new Date(),
+        createdAt: new Date(),
       });
 
       if (!withRef) return created;
@@ -108,50 +109,86 @@ class ConversationsServices {
       const finded = await conversationsModel.aggregate([
         {
           $lookup: {
-            as: "chats",
-            from: "chats",
-            localField: "_id",
-            foreignField: "conversation",
-          },
-        },
-        {
-          $match: {
-            $or: [
+            as: 'chats',
+            from: 'chats',
+            localField: '_id',
+            foreignField: 'conversation',
+            let: { conversationId: '$_id' },
+            pipeline: [
               {
-                "chats.inviter.user": new mongoose.Types.ObjectId(params.user),
-              },
-              {
-                "chats.friend.user": new mongoose.Types.ObjectId(params.user),
+                $match: {
+                  $expr: {
+                    $or: [
+                      {
+                        $and: [
+                          { $eq: ['$conversation', '$$conversationId'] },
+                          {
+                            $eq: [
+                              '$inviter.user',
+                              new mongoose.Types.ObjectId(params.user),
+                            ],
+                          },
+                        ],
+                      },
+                      {
+                        $and: [
+                          { $eq: ['$conversation', '$$conversationId'] },
+                          {
+                            $eq: [
+                              '$friend.user',
+                              new mongoose.Types.ObjectId(params.user),
+                            ],
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                },
               },
             ],
           },
         },
         {
           $lookup: {
-            from: "rooms",
-            let: { conversationId: "$conversation" },
+            from: 'rooms',
+            as: 'rooms',
+            localField: '_id',
+            foreignField: 'conversation',
             pipeline: [
               {
-                $match: {
-                  $expr: { $eq: ["$_id", "$$conversationId"] },
-                },
-              },
-              {
                 $lookup: {
-                  from: "roommembers",
-                  let: { roomsId: "$_id" },
+                  from: 'roommembers',
+                  let: { roomId: '$_id' },
                   pipeline: [
                     {
                       $match: {
-                        $expr: { $eq: ["$_id", "$$roomsId"] },
+                        $expr: {
+                          $and: [
+                            { $eq: ['$room', '$$roomId'] },
+                            {
+                              $eq: [
+                                '$user',
+                                new mongoose.Types.ObjectId(params.user),
+                              ],
+                            },
+                          ],
+                        },
                       },
                     },
                   ],
-                  as: "roommembers",
+                  as: 'roommembers',
                 },
               },
             ],
-            as: "rooms",
+          },
+        },
+        {
+          $match: {
+            $expr: {
+              $not: {
+                $and: [{ $eq: ['$chats', []] }, { $eq: ['$rooms', []] }],
+              },
+            },
           },
         },
         { $limit: limit },
@@ -160,6 +197,45 @@ class ConversationsServices {
 
       // Return
       return finded;
+    } catch (error) {
+      // Throw http exception
+      throw new Error(error.message);
+    }
+  }
+
+  // Check type and render mes
+  render_last_message(mes) {
+    // Sender lastname
+    const lastname = mes.sender?.nickname?.split(' ')[1];
+
+    // Swithcare
+    switch (mes.type) {
+      case "FILES":
+        return `${lastname} đã gửi ${mes.files.length} tệp tin.`;
+      case "VOICE":
+        return `${lastname} đã gửi tin nhắn thoại.`;
+      default:
+        // Return
+        return `${lastname}: ${mes.messages}`;
+    }
+  }
+
+  // Set last message
+  async set_last_message(message){
+    console.log(message);
+    // Exception
+    try {
+      // Message text
+      const text = this.render_last_message(message);
+
+      // Return
+      await conversationsModel.updateOne(
+        { _id: message.conversation },
+        { last_message: text, last_send: message.send_at },
+      );
+
+      // Return
+      return text;
     } catch (error) {
       // Throw http exception
       throw new Error(error.message);

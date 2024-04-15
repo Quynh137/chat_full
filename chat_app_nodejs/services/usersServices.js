@@ -39,10 +39,11 @@ class UsersServices {
 
       const { password, firstname, lastname, ...data } = finded._doc;
 
+
       // Return
       return {
         ...data,
-        friend,
+        ...friend,
         nickname: `${firstname} ${lastname}`,
       };
     } catch (e) {

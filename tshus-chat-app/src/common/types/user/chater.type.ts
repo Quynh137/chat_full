@@ -1,4 +1,4 @@
-export type Chater = {
+export type ChaterType = {
   nickname: string;
   avatar: string;
   user: string;

@@ -5,10 +5,11 @@ const ConversationsSchema = new mongoose.Schema(
   {
     type: {
       type: String,
-      enum: ["ROOM", "CHATS"],
+      enum: ["ROOMS", "CHATS"],
       require: true,
     },
-    last_message: { type: mongoose.Schema.Types.ObjectId, ref: "Messages" },
+    last_message: { type: String, default: "" },
+    last_send: { type: Date, default: Date.now() },
   },
   {
     timestamps: true,

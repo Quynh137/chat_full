@@ -1,6 +1,6 @@
 import { createContext, Dispatch, useEffect, useReducer } from 'react';
 import { getCookie } from '@/common/utils/cookie';
-import { AuthState } from '@/common/types/auth/types';
+import { AuthState } from '@/common/types/auth/auth-state.type';
 import { initialize, reducer } from './reducers';
 
 export enum AuthActionType {

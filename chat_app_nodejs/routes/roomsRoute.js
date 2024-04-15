@@ -1,9 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const {get, join} = require("../controllers/roomsControllers");
+const {create} = require("../controllers/roomsControllers");
 
-router.get("/", get);
-router.post("/join", join);
-
+// POST
+router.post("/create", create);
 
 module.exports = router;

@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
 import { getCookie } from './cookie';
 
 // API Host
@@ -8,11 +8,11 @@ const host = 'localhost';
 const port = '3001';
 
 // Base Url
-export const baseUrl = `http://${host}:${port}`;
+export const BASE_URL = `http://${host}:${port}`;
 
 // API api
 const api = axios.create({
-  baseURL: baseUrl,
+  baseURL: BASE_URL,
   headers: {
     'Access-Control-Allow-Origin': '*',
     'Content-Type': 'application/json',
@@ -32,37 +32,31 @@ api.interceptors.request.use((config) => {
 });
 
 // Fetching
-const fetching = async (response: any, route: Function | null = null) => {
+const fetching = async (response: any) => {
   // Get Status
-  const status = response?.status;
-
-  // Check and change error route
-  route && typeof route == 'function' && status !== 200 && route(`/${status}`);
+  const status = response?.status || 500;
 
   // Fetch response data
-  const data: any = response?.data?.data;
-
-  // Destructuring
-  const statusCode: number = response?.status || 500;
+  const data = response?.data?.data;
 
   // Return Data
-  return { status: statusCode, data };
+  return { status, data };
   
 };
 
 // Custom Fetcher
-const POST = async (url: string, data: any, route: Function | null = null) => {
+const POST = async (url: string, data: any) => {
   // Create Fetch
-  const response: any = await api
+  const response: AxiosResponse = await api
     .post(url, data)
     .then((res) => res)
     .catch((err) => err.response);
 
   // Return Fetching
-  return fetching(response, route);
+  return fetching(response);
 };
 
-const PUT = async (url: string, data: any, route: Function | null = null) => {
+const PUT = async (url: string, data: any) => {
   // Create Fetch
   const response: any = await api
     .put(url, data)
@@ -70,7 +64,7 @@ const PUT = async (url: string, data: any, route: Function | null = null) => {
     .catch((err) => err.response);
 
   // Return Fetching
-  return fetching(response, route);
+  return fetching(response);
 };
 
 // Fetcher Upload file
@@ -90,7 +84,7 @@ const UPLOAD = async (
     .catch((err) => err.response);
 
   // Return Fetching
-  return fetching(response, route);
+  return fetching(response);
 };
 
 // Fetcher Get
@@ -106,18 +100,9 @@ export const GET = async (
     .catch((err) => err.response);
 
   // Return Fetching
-  return fetching(response, route);
+  return fetching(response);
 };
-const PATCH = async (url: string, data: any, route: Function | null = null) => {
-  // Create Fetch
-  const response: any = await api
-    .patch(url, data)
-    .then((res) => res)
-    .catch((err) => err.response);
 
-  // Return Fetching
-  return fetching(response, route);
-};
 // Fetcher Delete
 const DELETE = async (
   url: string,
@@ -136,7 +121,7 @@ const DELETE = async (
 
   // Create Fetch
   const response: any = await fetch(
-    `${baseUrl}${url}${strParams ? `?${strParams}` : ''}`,
+    `${BASE_URL}${url}${strParams ? `?${strParams}` : ''}`,
     {
       method: 'DELETE',
       headers: {
@@ -147,7 +132,7 @@ const DELETE = async (
   );
 
   // Return Fetching
-  return fetching(response, route);
+  return fetching(response);
 };
 
 type Config = {
@@ -176,7 +161,5 @@ export const fetcher = async (config: Config) => {
     case 'UPLOAD':
       // Return Fetcher
       return await UPLOAD(config.url, config.payload);
-    case 'PATCH':
-      return await PATCH(config.url, config.payload);
   }
 };

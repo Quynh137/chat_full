@@ -11,11 +11,13 @@ type Props = {
 };
 
 const ChatHead: React.FC<Props> = ({ token, cvs, currCvsLoading }: Props) => {
+
   // Conversation Name
   const cvsName =
     cvs?.type === ConversationEnum.ROOMS
-      ? cvs?.rooms[0]?.name
-      : cvs?.chats[0]?.friend?.nickname;
+      ? cvs?.rooms?.[0]?.name
+      : cvs?.chats?.[0]?.friend?.nickname;
+
   // Return
   return (
     <Flex
@@ -39,7 +41,7 @@ const ChatHead: React.FC<Props> = ({ token, cvs, currCvsLoading }: Props) => {
                 offset={[-1, '100%']}
               >
                 <Avatar shape="square" alt={'1'} size={35}>
-                  {cvsName.charAt(0)}
+                  {cvsName?.charAt(0)}
                 </Avatar>
               </Badge>
               <Flex gap={1} vertical justify="space-between">

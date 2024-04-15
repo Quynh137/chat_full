@@ -1,81 +1,43 @@
 const roomsModel= require("../models/roomsModel");
 const conversationsServices = require("./conversationsServices"); 
-const roomsMembersModel = require('../models/roommembersModel');
-class RoomsServices {
-  async get(props) {
-    // Body data
-    const params = props;
+const roomMembersService = require('./roomsMemberServices');
 
+class RoomsServices {
+  // Create Services
+  async create(body) {
     // Exception
     try {
-      // Find
-      return await roomsModel.findOne({
-        "name": params.name,
-        "image": params.image,
-        "member_count": params.member_count,
-      });
+      // Create conversation
+      const cvs_created = await conversationsServices.create({ type: 'ROOMS' });
+
+      // Check conversation is created
+      if (cvs_created) {
+        // Create Room
+        const created_room = await roomsModel.create({
+          name: body.name,
+          image: body.image,
+          conversation: cvs_created._id,
+          members_count: body.members.length + 1,
+        });
+
+        // Check created room
+        if (created_room) {
+          // Add members
+          const add_room_members = await roomMembersService.add(
+            created_room._id,
+            body.creater,
+            body.members,
+          );
+
+          // Return
+          return add_room_members;
+        }
+      }
     } catch (error) {
-      // Throw http exception
+      // Throw Error
       throw new Error(error.message);
     }
   }
-
-  // Kiểm tra xem nếu có rồi thì trả về còn chưa có thì tạo mới
-  async join(props) {
-    // Body data
-    const body = props;
-
-    // Chat type
-    const type = "ROOM";
-
-    // Find chat
-    const finded = await this.get({
-        "name": body.name,
-        "image": body.image,
-        "member_count": body.member_count,
-    });
-
-    let _id = finded?.conversation;
-
-    if (!finded) {
-        if (body.member_count < 3) {
-            throw new Error("Phòng chat cần ít nhất 3 thành viên để tạo nhóm.");
-        }
-        // Joined conversation
-        const joinedCvs = await conversationsServices.join({ type });
-
-        // Assign conversation
-        _id = joinedCvs?._id.toString();
-
-        // Create chats
-        await roomsModel.create({
-            conversation: _id,
-            name: body.name,
-            image: body.image,
-            member_count: body.member_count,
-            created_at: new Date(),
-        });
-    } else {
-      const isUserJoined = await roomsMembersModel.aggregate([
-        {
-          $match: {
-            room: finded._id, // ID của phòng
-            user: body._id, // ID của người dùng
-          },
-        },
-        {
-          $count: "count",
-        },
-      ]);
-    }
-
-    // Get with ref
-    const getWithRef = await conversationsServices.getWithRef({ _id, type });
-
-    // Return
-    return getWithRef;
-}
-
 }
 
 module.exports = new RoomsServices();

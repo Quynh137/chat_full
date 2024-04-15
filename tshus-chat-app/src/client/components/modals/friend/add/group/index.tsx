@@ -28,7 +28,7 @@ const AddFriendsToGroupModal: FC = () => {
         footer={[]}
       >
         <div style={{ paddingTop: 10 }}>
-          <FindAndSelectFriend />
+          <FindAndSelectFriend changeOpen={setOpen} />
         </div>
       </Modal>
     </>

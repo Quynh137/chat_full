@@ -1,4 +1,4 @@
-import { AuthState } from '@/common/types/auth/types';
+import { AuthState } from '@/common/types/auth/auth-state.type';
 import { AuthActionType, PayloadAction } from './context';
 import { deleteCookie } from '@/common/utils/cookie';
 

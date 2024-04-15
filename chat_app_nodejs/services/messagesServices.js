@@ -1,6 +1,8 @@
 const { default: mongoose } = require("mongoose");
 const messagesModel = require("../models/messagesModel");
 const { s3, S3_BUCKET_NAME } = require('../config/aws');
+const conversationService = require('./conversationsServices')
+
 class MessagesServices {
   async create(props) {
     // Body data
@@ -14,8 +16,12 @@ class MessagesServices {
         seenders: [],
       });
 
+      const last_message = await conversationService.set_last_message(created);
+
+      console.log(created._doc);
+
       // Return
-      return created;
+      return {...created._doc, last_message };
     } catch (error) {
       // throw http exception
       throw new Error(error.message);
@@ -37,7 +43,7 @@ class MessagesServices {
       // Finded
       const finded = await messagesModel
         .find({ conversation: props.conversation })
-        .sort({ created_at: -1 })
+        .sort({ createdAt: -1 })
         .limit(limit)
         .skip(skip);
 
@@ -49,14 +55,14 @@ class MessagesServices {
     }
   }
 
-  async chats(socket, data) {
-    console.log(data)
+  async chats(data) {
     // Exceptionn
     try {
       // Created
       const created = await this.create(data);
 
-      socket.emit("chats", created);
+      // Return
+      return created;
 
     } catch (error) {
       // throw http exception
@@ -138,46 +144,7 @@ class MessagesServices {
     return await Promise.all(uploadPromises);
 };
 
-// async forwardMessage(messageId, chat) {
-//   try {
-//     const id = messageId._id;
-//     const {body} = chat;
-//     const message = await messagesModel.findOne(id);
-    
-//     if (!message) {
-//       throw new Error('Message not found');
-//     }
 
-//     const newMessage = new messagesModel({
-//       nickname: message.sender.nickname,
-//       image: message.sender.image,
-//       sender: message.sender.user,
-//       content: message.content,
-//       type: message.type,
-//       media: message.media,
-//       isForwarded: true,
-//       // sender: {} // Khởi tạo sender là một đối tượng rỗng
-//     });
-
-//     const room = await messagesModel
-//     .find({ conversation: chat.conversation})
-//     if (!room) {
-//       throw new Error('Chat room not found');
-//     }
-//     newMessage.sender.nickname = message.sender.nickname;
-//     newMessage.sender.image = message.sender.image;
-//     const rooms = room[0];
-//     room.push(newMessage._id);
-//     room.lastMessage = newMessage._id;
-
-//     await newMessage.save();
-//     await rooms.save();
-
-//     return newMessage;
-//   } catch (error) {
-//     throw new Error(error.message);
-//   }
-// }
 async forwardMessage(messageId, chat) {
   try {
     const id = messageId._id;

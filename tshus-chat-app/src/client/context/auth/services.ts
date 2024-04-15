@@ -1,5 +1,5 @@
 import { User } from "@/common/interface/User";
-import { Response } from "@/common/types/res/response.type";
+import { Response } from "@/common/types/response/response.type";
 import { setCookie } from "@/common/utils/cookie";
 import { fetcher } from "@/common/utils/fetcher";
 

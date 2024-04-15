@@ -1,4 +1,4 @@
-import React from 'react';
+import { FC, MouseEvent, useState } from 'react';
 import { Button, Cascader, Flex, Form, Modal, Spin, Typography } from 'antd';
 import { UserPlus } from '@phosphor-icons/react';
 import Search from 'antd/es/input/Search';
@@ -7,9 +7,11 @@ import UserFinded from '@/client/components/modals/friend/add/private/find';
 import { LoadingOutlined } from '@ant-design/icons';
 import { useAuth } from '@/client/hooks/use-auth';
 import { verifyEmail, verifyPhone } from '@/common/utils/form-rules';
+import EmptyHorizontal from '@/client/components/empty/horizontal.empty';
+import { UserHasFriend } from '@/common/types/user/user-has-friend.type';
+import { HookType } from '@/common/types/other/hook.type';
 import { User } from '@/common/interface/User';
-import { Response } from '@/common/types/res/response.type';
-import HrzEmpty from '@/client/components/skeleton/empty.skeleton.horizontal';
+import { Response } from '@/common/types/response/response.type';
 
 interface Option {
   value: string | number;
@@ -29,35 +31,37 @@ const options: Option[] = [
   },
 ];
 
-const AddFriendsModal: React.FC = () => {
+type OnSingleChange = any;
+
+const AddFriendsModal: FC = () => {
   // Search Input State
-  const [searchInput, setSearchInput] = React.useState('');
+  const [searchInput, setSearchInput] = useState('');
 
   // List user state
-  const [userFind, setUserFind] = React.useState<User | null>(null);
+  const [userFind, setUserFind] = useState<UserHasFriend | null>(null);
 
   // Open State
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = useState(false);
 
   // User
-  const user: any = useAuth();
+  const user: HookType<User> = useAuth();
 
   // Search loading state
-  const [searchLoading, setSearchLoading] = React.useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
 
   // Search type state
-  const [searchType, setSearchType] = React.useState<string>('EMAIL');
+  const [searchType, setSearchType] = useState<string>('EMAIL');
 
-  const handleSetSearchType = (value: any[]) => {
+  const handleSetSearchType: OnSingleChange = (value: string[]) =>
     setSearchType(value[0]);
-  };
 
   // Handle set search input
-  const handleSearchInput = (value: string) => setSearchInput(value);
+  const handleSearchInput: OnSingleChange = (value: string) =>
+    setSearchInput(value);
 
-  const showModal = () => setOpen(true);
+  const showModal: OnSingleChange = () => setOpen(true);
 
-  const handleOk = () => setOpen(false);
+  const handleOk: OnSingleChange = () => setOpen(false);
 
   const handleCancel = () => {
     // Clear search input
@@ -160,7 +164,7 @@ const AddFriendsModal: React.FC = () => {
                     <UserFinded item={userFind} closeAddModal={handleCancel} />
                   </Flex>
                 ) : (
-                  <HrzEmpty />
+                  <EmptyHorizontal desc="Không tìm thấy người dùng" />
                 )
               ) : (
                 <Flex style={{ marginTop: 20 }}>

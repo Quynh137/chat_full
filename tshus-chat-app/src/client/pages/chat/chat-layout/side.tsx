@@ -1,22 +1,15 @@
-import {
-  Avatar,
-  Badge,
-  Flex,
-  Typography,
-  Popover,
-  Skeleton,
-} from 'antd';
+import { Avatar, Badge, Flex, Typography, Popover, Skeleton } from 'antd';
 import React from 'react';
 import AddFriendsModal from '@/client/components/modals/friend/add/private';
 import Search from 'antd/es/input/Search';
 import { useConfig } from '@/common/hooks/use-config';
 import { debounce } from 'lodash';
 import { fetcher } from '@/common/utils/fetcher';
-import { Response } from '@/common/types/res/response.type';
+import { Response } from '@/common/types/response/response.type';
 import { ConversationEnum } from '@/common/enum/conversation.enum';
-import HrzEmpty from '@/client/components/skeleton/empty.skeleton.horizontal';
 import { ThemeEnum } from '@/common/enum/theme.enum';
 import AddFriendsToGroupModal from '@/client/components/modals/friend/add/group';
+import EmptyHorizontal from '@/client/components/empty/horizontal.empty';
 
 // Text
 const { Text } = Typography;
@@ -94,16 +87,18 @@ const ChatSide: React.FC<Props> = ({ cvsContext, token, user }: Props) => {
   // Use Effect
   React.useEffect(() => {
     // Load Conversations
-    const loadListCvs = async (page = 1) => {
+    (async () => {
       // Enable loading
       setCsvLoading(true);
 
       // Get conversations
-      const res: any = await fetcher({
+      const res: Response = await fetcher({
         method: 'GET',
         url: '/conversations/page',
-        payload: { page, user: user.get?._id },
+        payload: { page: 1, user: user.get?._id },
       });
+
+      console.log(res)
 
       // Check response and handle data
       if (res?.status === 200) cvsContext.list.set(res?.data);
@@ -112,10 +107,7 @@ const ChatSide: React.FC<Props> = ({ cvsContext, token, user }: Props) => {
       setTimeout(() => {
         setCsvLoading(false);
       }, delay);
-    };
-
-    // Calling
-    loadListCvs();
+    })();
 
     // Return clean
     return () => cvsContext.list.set([]);
@@ -149,7 +141,7 @@ const ChatSide: React.FC<Props> = ({ cvsContext, token, user }: Props) => {
               color: token.colorTextPlaceholder,
             }}
           >
-            0 tin nhắn, 0 chưa đọc
+            20 tin nhắn, 3 chưa đọc
           </Text>
         </Flex>
         <Popover
@@ -196,10 +188,10 @@ const ChatSide: React.FC<Props> = ({ cvsContext, token, user }: Props) => {
                       >
                         <Avatar
                           shape="square"
-                          alt={cvs.name.charAt(0)}
+                          alt={cvs.name?.charAt(0)}
                           size={35}
                         >
-                          {cvs.name.charAt(0)}
+                          {cvs.name?.charAt(0)}
                         </Avatar>
                       </Badge>
                       <Flex gap={1} vertical justify="space-between">
@@ -212,7 +204,7 @@ const ChatSide: React.FC<Props> = ({ cvsContext, token, user }: Props) => {
                   </Flex>
                 ))
               ) : (
-                <HrzEmpty />
+                <EmptyHorizontal desc="Không có dữ liệu" />
               )
             ) : (
               <Flex gap={10}>
@@ -230,22 +222,22 @@ const ChatSide: React.FC<Props> = ({ cvsContext, token, user }: Props) => {
               onChange={(e) => {
                 // Value
                 const value = e.target.value;
-  
+
                 // Change pop
                 if (value === '' || !value) {
                   // Clear data
                   setSearchCvs([]);
-  
+
                   // Set
                   setSearchPop(false);
                 } else {
                   // Set
                   setSearchPop(true);
                 }
-  
+
                 // Enable loading
                 setSearchLoading(LoadingSearch.ON);
-  
+
                 // Debounce
                 debouncedOnSearch(value);
               }}
@@ -302,20 +294,20 @@ const ChatSide: React.FC<Props> = ({ cvsContext, token, user }: Props) => {
                     offset={[-1, '100%']}
                   >
                     <Avatar shape="square" size={35}>
-                      {cvsName.charAt(0)}
+                      {cvsName?.charAt(0)}
                     </Avatar>
                   </Badge>
                   <Flex gap={1} vertical justify="space-between">
                     <Text style={{ fontSize: 13 }}>{cvsName}</Text>
                     <Text type="secondary" style={{ fontSize: 11 }}>
-                      Đang hoạt động
+                      {item?.last_message || 'Không có tin nhắn nào'}
                     </Text>
                   </Flex>
                 </Flex>
               );
             })
           ) : (
-            <HrzEmpty />
+            <EmptyHorizontal desc="Không có dữ liệu" />
           )
         ) : (
           <Flex vertical gap={10}>

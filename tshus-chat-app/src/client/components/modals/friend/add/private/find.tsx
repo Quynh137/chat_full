@@ -1,32 +1,35 @@
 import { App, Avatar, Button, Flex, Modal, Tooltip, Typography } from 'antd';
 import { Hourglass, UserPlus, Users } from '@phosphor-icons/react';
-import React from 'react';
+import React, { MouseEventHandler } from 'react';
 import { fetcher } from '@/common/utils/fetcher';
 import { useAuth } from '@/client/hooks/use-auth';
-import { FriendEnum } from '@/common/enum/friend.enum';
+import { FriendStateEnum } from '@/common/enum/friend-state.enum';
 import { green, blue } from '@ant-design/colors';
-import { baseUrl } from '@/common/utils/fetcher';
+import { BASE_URL } from '@/common/utils/fetcher';
 import { User } from '@/common/interface/User';
-import { Response } from '@/common/types/res/response.type';
+import { Response } from '@/common/types/response/response.type';
 import { useConfig } from '@/common/hooks/use-config';
+import { AuthHookType } from '@/common/types/other/hook.type';
+import { UserHasFriend } from '@/common/types/user/user-has-friend.type';
 
 const { Text } = Typography;
 
-type Props = { item: User; closeAddModal: Function };
+type Props = { item: UserHasFriend; closeAddModal: Function };
 
 // Icon Friend Status
 const friendStatus = (
-  key: FriendEnum,
-  friendRequest: any,
-  reqfLoading: boolean,
+  isSender: boolean = true,
+  loading: boolean,
+  state: FriendStateEnum = FriendStateEnum.PENDING,
+  request: MouseEventHandler<HTMLButtonElement>,
 ) => {
   // Swith Case
-  switch (key) {
-    case FriendEnum.PENDING:
+  switch (state) {
+    case FriendStateEnum.PENDING:
       return (
-        <Tooltip title="Đã gửi yêu cầu">
+        <Tooltip title={isSender ? 'Đã gửi yêu cầu' : 'Chờ bạn phản hồi'}>
           <Button
-            loading={reqfLoading}
+            loading={loading}
             icon={<Hourglass size={16} />}
             style={{
               display: 'flex',
@@ -36,11 +39,11 @@ const friendStatus = (
               borderColor: '#F29339',
             }}
           >
-            Đã yêu cầu
+            {isSender ? 'Đã gửi yêu cầu' : 'Chờ bạn phản hồi'}
           </Button>
         </Tooltip>
       );
-    case FriendEnum.ACCEPTED:
+    case FriendStateEnum.ACCEPTED:
       return (
         <Tooltip title="Đã kết bạn">
           <Button
@@ -61,9 +64,9 @@ const friendStatus = (
       return (
         <Tooltip title="Kết bạn">
           <Button
-            loading={reqfLoading}
+            loading={loading}
             icon={<UserPlus size={18} />}
-            onClick={friendRequest}
+            onClick={request}
             style={{
               display: 'flex',
               color: blue.primary,
@@ -82,15 +85,15 @@ const friendStatus = (
 const UsersFinded: React.FC<Props> = React.memo(
   ({ item, closeAddModal }: Props) => {
     // User
-    const user: any = useAuth();
+    const user: AuthHookType<User> = useAuth();
 
     const config = useConfig();
 
     // Message
     const { message } = App.useApp();
 
-    // friend state
-    const [friend, setFriend] = React.useState<any>(null);
+    // Friend state
+    const [friend, setFriend] = React.useState<UserHasFriend | null>(null);
 
     const [isModalOpen, setIsModalOpen] = React.useState<boolean>(false);
 
@@ -109,6 +112,7 @@ const UsersFinded: React.FC<Props> = React.memo(
 
       // Return clean
       return () => setFriend(null);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // Handle Add Friend
@@ -127,9 +131,9 @@ const UsersFinded: React.FC<Props> = React.memo(
             nickname: user.get?.nickname,
           },
           friend: {
-            user: friend?._id,
-            avatar: friend?.avatar,
-            nickname: friend?.nickname,
+            user: item?._id,
+            avatar: item?.avatar,
+            nickname: item?.nickname,
           },
         },
       });
@@ -141,7 +145,11 @@ const UsersFinded: React.FC<Props> = React.memo(
           message.error('Gửi yêu cầu kết bạn thất bại');
         } else {
           // Set hasFriend
-          setFriend((prev: any) => ({ ...prev, friend: FriendEnum.PENDING }));
+          setFriend((prev: UserHasFriend | null) => ({
+            ...(prev as UserHasFriend),
+            friend: FriendStateEnum.PENDING,
+            isSender: true,
+          }));
 
           // Message success
           message.success('Đã gửi yêu cầu kết bạn');
@@ -173,7 +181,6 @@ const UsersFinded: React.FC<Props> = React.memo(
           },
         },
       });
-
 
       setTimeout(() => {
         if (res?.status !== 200) {
@@ -210,10 +217,10 @@ const UsersFinded: React.FC<Props> = React.memo(
             <Avatar
               size={80}
               shape="square"
-              alt={friend?.nickname.charAt(0)}
-              src={`${baseUrl}/${friend?.avatar}`}
+              alt={friend?.nickname?.charAt(0)}
+              src={`${BASE_URL}/${friend?.avatar}`}
             >
-              {friend?.nickname.charAt(0)}
+              {friend?.nickname?.charAt(0)}
             </Avatar>
             <Flex gap={1} vertical align="center">
               <Text style={{ fontSize: 23 }}>{friend?.nickname}</Text>
@@ -225,7 +232,12 @@ const UsersFinded: React.FC<Props> = React.memo(
               <Button type="primary" onClick={openChat} loading={opChatLoading}>
                 Nhắn tin
               </Button>
-              {friendStatus(friend?.friend, friendRequest, reqfLoading)}
+              {friendStatus(
+                friend?.isSender,
+                reqfLoading,
+                friend?.state,
+                friendRequest,
+              )}
             </Flex>
           </Flex>
         </Modal>
@@ -236,16 +248,18 @@ const UsersFinded: React.FC<Props> = React.memo(
             justify="space-between"
             onClick={showModal}
             style={{ padding: '2px 3px', cursor: 'pointer' }}
-            className={`${config.get.theme === 'dark' ? 'cvs-d-hover' : 'cvs-l-hover'}`}
+            className={`${
+              config.get.theme === 'dark' ? 'cvs-d-hover' : 'cvs-l-hover'
+            }`}
           >
             <Flex align="center" gap={15}>
               <Avatar
                 shape="square"
-                alt={friend?.nickname.charAt(0)}
+                alt={friend?.nickname?.charAt(0)}
                 size={35}
-                src={`${baseUrl}/${friend?.avatar}`}
+                src={`${BASE_URL}/${friend?.avatar}`}
               >
-                {friend?.nickname.charAt(0)}
+                {friend?.nickname?.charAt(0)}
               </Avatar>
               <Flex gap={1} vertical justify="space-between">
                 <Text style={{ fontSize: 13 }}>{friend?.nickname}</Text>

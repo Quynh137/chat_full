@@ -2,10 +2,10 @@ import React from 'react';
 import ChatLine from './line';
 import { Divider, Flex } from 'antd';
 import InfiniteScroll from 'react-infinite-scroll-component';
-import VtcEmpty from '@/client/components/skeleton/empty.skeleton.vertical';
 import { fetcher } from '@/common/utils/fetcher';
-import { Response } from '@/common/types/res/response.type';
+import { Response } from '@/common/types/response/response.type';
 import { Messages } from '@/common/interface/Messages';
+import EmptyVertical from '@/client/components/empty/vertical.empty';
 
 type Props = {
   mes: Messages[];
@@ -13,15 +13,15 @@ type Props = {
   setMes: React.Dispatch<React.SetStateAction<any[]>>;
 };
 
-const ChatContent: React.FC<Props> = React.memo(({ mes, cvsId, setMes }: Props) => {
+const ChatContent: React.FC<Props> = React.memo(
+  ({ mes, cvsId, setMes }: Props) => {
     // Page
-    const [page, SetPage] = React.useState<number>(1);
+    const [page, setPage] = React.useState<number>(1);
 
-    // Is has more  
+    // Is has more
     const [hasMore, setHasMore] = React.useState<boolean>(true);
 
     const next = async () => {
-
       // Get messages
       const res: Response = await fetcher({
         method: 'GET',
@@ -35,10 +35,10 @@ const ChatContent: React.FC<Props> = React.memo(({ mes, cvsId, setMes }: Props) 
         const data = res?.data;
 
         // Check end messsage
-        if (data?.length === 0) setHasMore(false);;
+        if (data?.length === 0) setHasMore(false);
 
         // Set page
-        SetPage(page);
+        setPage(page + 1);
 
         // Set messages
         setMes(mes.concat(res?.data));
@@ -73,16 +73,14 @@ const ChatContent: React.FC<Props> = React.memo(({ mes, cvsId, setMes }: Props) 
                 scrollBehavior: 'smooth',
               }}
             >
-              
               {mes?.map((msg) => (
-                
                 <ChatLine key={msg._id} data={msg} />
               ))}
             </InfiniteScroll>
           </Flex>
         ) : (
           <Flex justify="center" align="center" flex={1}>
-            <VtcEmpty />
+            <EmptyVertical desc="Không có tin nhắn nào" />
           </Flex>
         )}
       </Flex>

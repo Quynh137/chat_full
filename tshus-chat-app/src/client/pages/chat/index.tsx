@@ -9,7 +9,6 @@ import {
   GetProp,
   UploadProps,
 } from 'antd';
-import React from 'react';
 import TextArea from 'antd/es/input/TextArea';
 import {
   ImageSquare,
@@ -26,16 +25,26 @@ import ChatSide from './chat-layout/side';
 import ChatUploadFile from './chat-upload/upload-file';
 import ChatUploadImage from './chat-upload/upload-image';
 import { MessageType } from '@/common/enum/message-type';
-import { Response } from '@/common/types/res/response.type';
+import { Response } from '@/common/types/response/response.type';
 import { fetcher } from '@/common/utils/fetcher';
 import { Socket } from 'socket.io-client';
 import ChatContent from './chat-layout/content';
-import VtcEmpty from '@/client/components/skeleton/empty.skeleton.vertical';
 import ChatHead from './chat-layout/head';
+import EmptyVertical from '@/client/components/empty/vertical.empty';
+import { Messages } from '@/common/interface/Messages';
+import {
+  FC,
+  FormEvent,
+  Fragment,
+  RefObject,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 
 type FileType = Parameters<GetProp<UploadProps, 'beforeUpload'>>[0];
 
-const ChatWrapper: React.FC = () => {
+const ChatWrapper: FC = () => {
   // Return
   return (
     <ConversationsProvider>
@@ -47,33 +56,33 @@ const ChatWrapper: React.FC = () => {
 // Use Token
 const { useToken } = theme;
 
-const Chat: React.FC = () => {
+const Chat: FC = () => {
   // Toeken
   const { token } = useToken();
 
   const delay = 300;
 
   // Message State
-  const [message, setMessage] = React.useState<string>('');
+  const [message, setMessage] = useState<string>('');
 
   // Chat messages
-  const [messages, setMessages] = React.useState<any[]>([]);
+  const [messages, setMessages] = useState<Messages[]>([]);
 
-  const [currCvsLoading, setCurrCsvLoading] = React.useState<boolean>(true);
-
-  // File list
-  const [fileList, setFileList] = React.useState<UploadFile[]>([]);
+  const [currCvsLoading, setCurrCsvLoading] = useState<boolean>(true);
 
   // File list
-  const [imageList, setImageList] = React.useState<UploadFile[]>([]);
+  const [fileList, setFileList] = useState<UploadFile[]>([]);
+
+  // File list
+  const [imageList, setImageList] = useState<UploadFile[]>([]);
 
   // Upload file btn ref
-  const uploadFileBtn: React.RefObject<HTMLButtonElement> =
-    React.useRef<HTMLButtonElement>(null);
+  const uploadFileBtn: RefObject<HTMLButtonElement> =
+    useRef<HTMLButtonElement>(null);
 
   // Upload file image ref
-  const uploadImageBtn: React.RefObject<HTMLButtonElement> =
-    React.useRef<HTMLButtonElement>(null);
+  const uploadImageBtn: RefObject<HTMLButtonElement> =
+    useRef<HTMLButtonElement>(null);
 
   // Socket
   const socket: Socket = useSocket();
@@ -85,94 +94,94 @@ const Chat: React.FC = () => {
   const user: any = useAuth();
 
   // Handle Set Message
-  const handleSetMessage = (value: string) => setMessage(value);
+  const handleSetMessage: any = (value: string) => setMessage(value);
 
   // get cursor position and add the emoji to message string
   const handleEmojiPickup = (emoji: any) => {
     setMessage((prev) => prev + emoji.native);
   };
 
-  // Handle Messages
-  const handleMessages = async (): Promise<any> => {
-    // Handle promise
-    return new Promise(async (resolve, reject) => {
-      // User data
-      const _user = user.get;
+  // Send messages to server
+  const onSubmit = async (e: FormEvent): Promise<void> => {
+    // Event prevent
+    e.preventDefault();
 
-      // Check has file
-      const hasFile = fileList.length > 0 || imageList.length > 0;
+    // Handle Messages
+    const promise = async (): Promise<any> => {
+      // Handle promise
+      return new Promise(async (resolve, reject) => {
+        // User data
+        const _user = user.get;
 
-      // Check message valid
-      const isValid = Boolean(message) && message.trim() !== '';
+        // Check has file
+        const hasFile = fileList.length > 0 || imageList.length > 0;
 
-      // Create message info
-      const info: any = {
-        files: [],
-        sender: {
-          user: _user?._id,
-          avatar: _user?.avatar,
-          nickname: _user?.nickname,
-        },
-        messages: message.trim(),
-        conversation: cvsContext.current.get?._id,
-        type: hasFile ? MessageType.FILES : MessageType.TEXT,
-      };
+        // Check message valid
+        const isValid = Boolean(message) && message.trim() !== '';
 
-      // Check message valid or has file
-      if (hasFile || isValid) {
-        // If has file or image
-        if (!hasFile) resolve(info);
+        // Create message info
+        const info: Messages = {
+          files: [],
+          sender: {
+            user: _user?._id,
+            avatar: _user?.avatar,
+            nickname: _user?.nickname,
+          },
+          messages: message.trim(),
+          conversation: cvsContext.current.get?._id,
+          type: hasFile ? MessageType.FILES : MessageType.TEXT,
+        };
 
-        // Each and add file to form data
-        const formData = new FormData();
+        // Check message valid or has file
+        if (hasFile || isValid) {
+          // Has file
+          if (hasFile) {
+            // Each and add file to form data
+            const formData = new FormData();
 
-        // Add files
-        [...fileList, ...imageList]?.forEach((file: UploadFile) => {
-          // File original
-          const orf = file?.originFileObj as FileType;
+            // Add files
+            [...fileList, ...imageList]?.forEach((file: UploadFile) => {
+              // File original
+              const orf = file?.originFileObj as FileType;
 
-          // Append
-          formData.append('files[]', orf);
-        });
+              // Append
+              formData.append('files[]', orf);
+            });
 
-        // Clear file list
-        setFileList([]);
+            // Clear file list
+            setFileList([]);
 
-        // Clear image list
-        setImageList([]);
+            // Clear image list
+            setImageList([]);
+
+            // Upload Image
+            const uploaded: Response = await fetcher({
+              method: 'UPLOAD',
+              url: '/messages/upload',
+              payload: formData,
+            });
+
+            // Check is uploaed success
+            if (uploaded?.status === 201) {
+              // Push files name
+              info.files = uploaded.data;
+            }
+          }
+        }
 
         // Clear message
         setMessage('');
 
-        // Upload Image
-        const uploaded = await fetcher({
-          method: 'UPLOAD',
-          url: '/messages/upload',
-          payload: formData,
-        });
+        // Resolve Data
+        resolve(info);
 
-        // Check is uploaed success
-        if (uploaded?.status === 200) {
-          // Push files name
-          info.files = uploaded.data;
-
-          // Resolve Data
-          resolve(info);
-        }
-      }
-
-      // Resject
-      reject();
-    });
-  };
-
-  // Send messages to server
-  const shasMore = async (e: React.FormEvent): Promise<void> => {
-    // Event prevent
-    e.preventDefault();
+        // Resject
+        reject();
+      });
+    };
 
     // Handle messages promise
-    handleMessages()
+    promise()
       .then((res) => {
         // Send Message
         socket.emit('chat-message', res);
@@ -181,12 +190,29 @@ const Chat: React.FC = () => {
   };
 
   // First Loading Use Effect
-  React.useEffect(() => {
+  useEffect(() => {
     // Check socket connected
     if (socket) {
       // Subscribes events
-      socket?.on('chats', (mes: Socket) => {
-        setMessages((prev) => [mes, ...prev]);
+      socket?.on('chats', async (mes: Messages) => {
+        // Check conversation
+        if (mes?.conversation === cvsContext.current.get?._id) {
+          // Destructure
+          const { last_message, ...data } = mes;
+
+          // Updated conversation
+          const updated = {
+            ...cvsContext.current.get,
+            last_message,
+            last_send: data.send_at,
+          };
+
+          // Set current conversation
+          await cvsContext.current.update(updated);
+
+          // Set message
+          setMessages((prev) => [data, ...prev]);
+        }
       });
     }
 
@@ -194,20 +220,38 @@ const Chat: React.FC = () => {
     return () => {
       socket?.off('chats');
     };
-  });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cvsContext.current.get, socket]);
 
-  React.useEffect(() => {
+  // Effect
+  useEffect(() => {
+    // List conversation length
+    const listCvsLength: number = cvsContext.list.get?.length;
+
     // Loading current conversation
-    const loadCurrentCvs = async () => {
-      // Enable loading
-      setCurrCsvLoading(true);
+    listCvsLength > 0 &&
+      (async () => {
+        // Load data to session storage
+        const sessionCvs = sessionStorage.getItem('tshus.curent.conversation');
 
-      // Set default current conversation
-      cvsContext.list.get?.length > 0 &&
-        cvsContext.current.set(cvsContext.list.get[0]);
-    };
+        // Parse data
+        const parse = sessionCvs ? JSON.parse(sessionCvs) : null;
 
-    cvsContext.list.get?.length > 0 && loadCurrentCvs();
+        // Handle set current cvs
+        const setCurrentCvs = cvsContext.current.set;
+
+        // Check session has conversation
+        if (parse?.user_id === user.get?._id && parse?.cvs) {
+          // Set default current conversation
+          setCurrentCvs(parse.cvs);
+        } else {
+          // Set default current conversation
+          setCurrentCvs(cvsContext.list.get[0]);
+        }
+
+        // Enable loading
+        setCurrCsvLoading(true);
+      })();
 
     // Disable Loadign
     setTimeout(() => {
@@ -217,30 +261,30 @@ const Chat: React.FC = () => {
   }, [cvsContext.list.get]);
 
   // Use Effect
-  React.useEffect(() => {
+  useEffect(() => {
     // Current conversation id
-    const cvsId = cvsContext.current.get?._id;
+    const cvsId: string = cvsContext.current.get?._id;
 
     // Get messages with page
-    const loadMessages = async (cvsId: string) => {
-      // Get messages
-      const res: Response = await fetcher({
-        method: 'GET',
-        url: '/messages/page',
-        payload: { conversation: cvsId, page: 1 },
-      });
-
-      console.log(res);
-
-      // Check status
-      if (res?.status === 200) setMessages(res?.data);
-    };
 
     // Caling
-    cvsId && loadMessages(cvsId);
+    cvsId &&
+      (async () => {
+        // Get messages
+        const res: Response = await fetcher({
+          method: 'GET',
+          url: '/messages/page',
+          payload: { conversation: cvsId, page: 1 },
+        });
+
+        // Check status
+        if (res?.status === 200) setMessages(res?.data);
+      })();
 
     // Return clean
-    return () => { setMessages([]) };
+    return () => {
+      setMessages([]);
+    };
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cvsContext.current.get]);
@@ -276,7 +320,7 @@ const Chat: React.FC = () => {
               <Flex flex={1}>
                 <TextArea
                   variant="filled"
-                  onPressEnter={(e) => !e.shiftKey && shasMore(e)}
+                  onPressEnter={(e) => !e.shiftKey && onSubmit(e)}
                   placeholder="Nhập nội dung tin nhắn"
                   autoSize
                   value={message}
@@ -293,7 +337,7 @@ const Chat: React.FC = () => {
               <Button
                 icon={<PaperPlaneRight size={20} />}
                 type="primary"
-                onClick={shasMore}
+                onClick={onSubmit}
               />
             </Flex>
           </Flex>
@@ -326,14 +370,14 @@ const Chat: React.FC = () => {
       </Flex>
     ) : (
       <Flex justify="center" align="center" className="h-100">
-        <VtcEmpty />
+        <EmptyVertical desc="Không có dữ liệu" />
       </Flex>
     );
   };
 
   // Return
   return (
-    <React.Fragment>
+    <Fragment>
       <Row style={{ height: '100%' }}>
         <Col
           xl={5}
@@ -349,7 +393,7 @@ const Chat: React.FC = () => {
           {ContentView(cvsContext.current.get)}
         </Col>
       </Row>
-    </React.Fragment>
+    </Fragment>
   );
 };
 

@@ -38,17 +38,36 @@ class FriendsServices {
     }
   }
 
-  // Check 2 user trong mqh ban be
+  // Check trang thai ban be
   async check(inviter, friend) {
     // Exception
     try {
+      // Kiem tra xem 2 nguoi dung co phai ban be khong
+      // Check xem neu co id cua minh o trong inviter hoac trong friend thi duoc coi la du lieu co o trong collection friend
       const isFriend = await friendsModel.findOne({
-        "inviter.user": inviter,
-        "friend.user": friend,
+        $or: [
+          {
+            $and: [{'inviter.user': inviter}, {'friend.user': friend}]
+          },
+          {
+            $and: [{'inviter.user': friend}, {'friend.user': inviter}]
+          }
+        ]
       });
 
+      // Check xem minh co phai nguoi gui khong
+      const isSender = isFriend?.inviter?.user?.toString() === inviter;
+
+      console.log(isFriend, inviter);
+
       // Return
-      return isFriend ? isFriend?.state : 'NOT_YET';
+      return {
+        // Cai nay la trang thai ban be, neu da ton tai trong conllection thi tra ve trang thai trong collec, con neu trong collect chua co thi tra ve NOT_YET
+        // Van phai de cai NOT_YET ne, bo cai REQUEST :))))
+        state: isFriend ? isFriend.state : "NOT_YET",
+        // Tra ve xem minh co phai la nguoi gui khong
+        isSender
+      };
     } catch (error) {
      // Throw error
       throw new Error(error.message);

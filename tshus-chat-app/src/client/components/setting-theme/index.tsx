@@ -1,20 +1,14 @@
-import { Button, Flex, Popover, Switch, Typography, theme } from 'antd';
-import React from 'react';
+import { Button, Flex, Popover, Switch, Typography } from 'antd';
 import { useConfig } from '@/common/hooks/use-config';
 import { Gear } from '@phosphor-icons/react';
+import { FC, useState } from 'react';
 
-// Use Token
-const { useToken } = theme;
-
-const Setting: React.FC = () => {
+const SettingTheme: FC = () => {
   // Config
   const config = useConfig();
 
-  // Toeken
-  const { token } = useToken();
-
   // Open State
-  const [open, setOpen] = React.useState<boolean>(false);
+  const [open, setOpen] = useState<boolean>(false);
 
   // Open
   const handleOpenChange = (newOpen: boolean) => setOpen(newOpen);
@@ -41,14 +35,15 @@ const Setting: React.FC = () => {
       trigger="click"
       open={open}
       onOpenChange={handleOpenChange}
+      placement='topRight'
     >
       <Button
         type="text"
-        icon={<Gear size={20} />}
-        style={{ color: token.colorTextSecondary }}
+        icon={<Gear size={22} />}
+        style={{ color: "white" }}
       />
     </Popover>
   );
 };
 
-export default Setting;
+export default SettingTheme;

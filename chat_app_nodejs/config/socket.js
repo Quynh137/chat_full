@@ -20,8 +20,13 @@ const connectSocket = () => {
 
   // Socket connection
   io.on("connection", (socket) => {
-    socket.on("chat-message", (data) => {
-      messagesServices.chats(socket, data);
+    socket.on("chat-message", async (data) => {
+      // Message
+      const message = await messagesServices.chats(data);
+
+      // Send
+      io.emit("chats", message);
+
     });
   });
 };

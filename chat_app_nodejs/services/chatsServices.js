@@ -47,7 +47,7 @@ class ChatsServices {
         conversation: _id,
         friend: body.friend,
         inviter: body.inviter,
-        created_at: new Date(),
+        createdAt: new Date(),
       });
     }
 

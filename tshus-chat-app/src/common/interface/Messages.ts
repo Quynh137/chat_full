@@ -1,11 +1,13 @@
-import { MessageType } from "antd/es/message/interface";
-import { Chater } from "../types/chat/chater.type";
+import { MessageType } from "@/common/enum/message-type";
+import { ChaterType } from "@/common/types/user/chater.type";
 
 export interface Messages {
-     _id: string;
+     _id?: string;
      conversation: string;
      type: MessageType;
      files: any[];
      messages: string;
-     sender: Chater;
+     sender: ChaterType;
+     send_at?: Date;
+     last_message?: string;
 }

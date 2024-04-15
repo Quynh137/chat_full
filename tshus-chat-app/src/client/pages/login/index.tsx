@@ -65,7 +65,7 @@ export default function Login() {
       }, 300);
     } else {
       // Show message
-      message.error('Đăng nhập thấy bại, vui lòng thử lại');
+      message.error('Đăng nhập thất bại, vui lòng thử lại');
     }
   };
 

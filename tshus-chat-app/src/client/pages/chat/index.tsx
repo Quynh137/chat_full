@@ -8,28 +8,38 @@ import {
   Tooltip,
   GetProp,
   UploadProps,
+  Skeleton,
+  Badge,
+  Avatar,
+  Typography,
+  Drawer,
+  Divider,
+  Collapse,
 } from 'antd';
 import TextArea from 'antd/es/input/TextArea';
 import {
+  Calendar,
+  DotsThree,
   ImageSquare,
   Link,
   Microphone,
   PaperPlaneRight,
+  User,
+  WechatLogo,
 } from '@phosphor-icons/react';
 import EmojiPick from '@/client/components/emoji';
 import ConversationsProvider from '@/client/context/conversations-context';
 import { useConversations } from '@/client/hooks/user-conversations';
 import { useSocket } from '@/common/hooks/use-socket';
 import { useAuth } from '@/client/hooks/use-auth';
-import ChatSide from './chat-layout/side';
-import ChatUploadFile from './chat-upload/upload-file';
-import ChatUploadImage from './chat-upload/upload-image';
+import ChatSide from './components/chat-layout/side';
+import ChatUploadFile from './components/chat-upload/upload-file';
+import ChatUploadImage from './components/chat-upload/upload-image';
 import { MessageType } from '@/common/enum/message-type';
 import { Response } from '@/common/types/response/response.type';
-import { fetcher } from '@/common/utils/fetcher';
+import { BASE_URL, fetcher } from '@/common/utils/fetcher';
 import { Socket } from 'socket.io-client';
-import ChatContent from './chat-layout/content';
-import ChatHead from './chat-layout/head';
+import ChatContent from './components/chat-layout/content';
 import EmptyVertical from '@/client/components/empty/vertical.empty';
 import { Messages } from '@/common/interface/Messages';
 import {
@@ -41,6 +51,16 @@ import {
   useRef,
   useState,
 } from 'react';
+import { ConversationEnum } from '@/common/enum/conversation.enum';
+import { Conversations } from '@/common/interface/Conversations';
+import { formatToDateTime } from '@/common/utils/date';
+import { ThemeEnum } from '@/common/enum/theme.enum';
+import { useConfig } from '@/common/hooks/use-config';
+import AddMemberToGroupModal from '@/client/components/modals/member/add';
+import DeleteMemberFromGroupModal from '@/client/components/modals/member/delete';
+import { Roommembers } from '@/common/interface/Roommembers';
+
+const { Text } = Typography;
 
 type FileType = Parameters<GetProp<UploadProps, 'beforeUpload'>>[0];
 
@@ -65,6 +85,9 @@ const Chat: FC = () => {
   // Message State
   const [message, setMessage] = useState<string>('');
 
+  // Roommembers State
+  const [roommembers, setRoommembers] = useState<Roommembers[] | []>([]);
+
   // Chat messages
   const [messages, setMessages] = useState<Messages[]>([]);
 
@@ -75,6 +98,20 @@ const Chat: FC = () => {
 
   // File list
   const [imageList, setImageList] = useState<UploadFile[]>([]);
+
+  // Open Drawer
+  const [open, setOpen] = useState<boolean>(false);
+
+  // Config
+  const config = useConfig();
+
+  const showDrawer = () => {
+    setOpen(true);
+  };
+
+  const onClose = () => {
+    setOpen(false);
+  };
 
   // Upload file btn ref
   const uploadFileBtn: RefObject<HTMLButtonElement> =
@@ -146,7 +183,6 @@ const Chat: FC = () => {
 
               // Append
               formData.append('files[]', orf);
-              
             });
 
             // Clear file list
@@ -224,6 +260,27 @@ const Chat: FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cvsContext.current.get, socket]);
 
+  // Use Effect
+  useEffect(() => {
+    // Load roommembers
+    cvsContext.current.get?.type === ConversationEnum.ROOMS &&
+      (async () => {
+        // Response
+        const res: Response = await fetcher({
+          method: 'GET',
+          url: '/roommembers/page',
+          payload: { room: cvsContext.current.get?.rooms?.[0]?._id, page: 1 },
+        });
+
+        // If response success
+        if (res?.status === 200) {
+          // Set members
+          setRoommembers(res?.data);
+        }
+      })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cvsContext.current.get?.type]);
+
   // Effect
   useEffect(() => {
     // List conversation length
@@ -266,8 +323,6 @@ const Chat: FC = () => {
     // Current conversation id
     const cvsId: string = cvsContext.current.get?._id;
 
-    // Get messages with page
-
     // Caling
     cvsId &&
       (async () => {
@@ -284,16 +339,232 @@ const Chat: FC = () => {
 
     // Return clean
     return () => {
+      // Clean message
       setMessages([]);
+
+      // Clean file list
+      setFileList([]);
+
+      // Clean image list
+      setImageList([]);
     };
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cvsContext.current.get]);
 
-  const ContentView = (cvs: any) => {
+  const DrawerContent = (cvs: Conversations) => {
+    // Is room
+    const isRoom = cvsContext.current.get?.type === ConversationEnum.ROOMS;
+
+    // Data
+    const data = isRoom ? cvs?.rooms?.[0] : cvs?.chats?.[0]?.friend;
+
+    // Return
+    return (
+      <Flex
+        vertical
+        style={{ height: '100%', overflow: 'auto', scrollbarWidth: 'none' }}
+      >
+        <Flex align="center" gap={15} vertical>
+          <Avatar
+            shape="square"
+            style={{ width: '100%', height: 200, fontSize: 50 }}
+            alt={isRoom ? data?.name?.charAt(0) : data?.nickname?.charAt(0)}
+            src={
+              isRoom
+                ? `${BASE_URL}/${data?.image}`
+                : `${BASE_URL}/${data?.avatar}`
+            }
+          >
+            {isRoom ? data?.name?.charAt(0) : data?.nickname?.charAt(0)}
+          </Avatar>
+          <Flex gap={1} vertical align="center">
+            <Text style={{ fontSize: 23 }}>
+              {isRoom ? data?.name : data?.nickname}
+            </Text>
+            <Flex align="center" gap={5}>
+              <Badge dot status="success" />
+              <Text type="secondary" style={{ fontSize: 13 }}>
+                Đang hoạt động
+              </Text>
+            </Flex>
+          </Flex>
+        </Flex>
+        <Divider plain orientationMargin="0" dashed />
+        <Flex justify="center">
+          {isRoom && data?.roommembers?.length > 0 && (
+            <Fragment>
+              <AddMemberToGroupModal />
+              <DeleteMemberFromGroupModal roommembers={roommembers}/>
+            </Fragment>
+          )}
+        </Flex>
+        <Divider plain orientationMargin="0" dashed />
+        <Collapse defaultActiveKey={['1']}>
+          <Collapse.Panel key={'1'} header="THÔNG TIN">
+            <Flex align="left" gap={15} vertical>
+              <Flex vertical gap={10}>
+                <Flex align="center" gap={15}>
+                  <User
+                    size={18}
+                    style={{ color: token.colorTextDescription }}
+                  />
+                  <Text style={{ fontSize: 13.5, fontWeight: '400' }}>
+                    Tên: {isRoom ? data?.name : data?.nickname}
+                  </Text>
+                </Flex>
+                <Flex align="center" gap={15}>
+                  <WechatLogo
+                    size={18}
+                    style={{ color: token.colorTextDescription }}
+                  />
+                  <Text style={{ fontSize: 13.5, fontWeight: '400' }}>
+                    Nhắn tin: {isRoom ? 'Phòng chat' : 'Chat riêng'}
+                  </Text>
+                </Flex>
+                <Flex align="center" gap={15}>
+                  <Calendar
+                    size={18}
+                    style={{ color: token.colorTextDescription }}
+                  />
+                  <Text style={{ fontSize: 13.5, fontWeight: '400' }}>
+                    Ngày tạo: {formatToDateTime(cvs?.createdAt.toString())}
+                  </Text>
+                </Flex>
+
+                {isRoom && (
+                  <Fragment>
+                    <Flex align="center" gap={15}>
+                      <Calendar
+                        size={18}
+                        style={{ color: token.colorTextDescription }}
+                      />
+                      <Text style={{ fontSize: 13.5, fontWeight: '400' }}>
+                        Số lượng thành viên: {data?.members_count} thành viên
+                      </Text>
+                    </Flex>
+                  </Fragment>
+                )}
+                <Flex align="center" gap={15}>
+                  <Calendar
+                    size={18}
+                    style={{ color: token.colorTextDescription }}
+                  />
+                  <Text style={{ fontSize: 13.5, fontWeight: '400' }}>
+                    Tin nhắn mới nhất:{' '}
+                    {formatToDateTime(cvs?.last_send.toString())}
+                  </Text>
+                </Flex>
+              </Flex>
+            </Flex>
+          </Collapse.Panel>
+        </Collapse>
+        <Divider plain orientationMargin="0" dashed />
+        {isRoom && roommembers?.length > 0 && (
+          <Collapse defaultActiveKey={['2']}>
+            <Collapse.Panel key={'2'} header="THÀNH VIÊN NHÓM">
+              <Flex align="left" gap={5} vertical>
+                {roommembers?.map((member: any) => (
+                  <Flex
+                    key={member._id}
+                    justify="space-between"
+                    style={{ cursor: 'pointer', padding: 2, borderRadius: 5 }}
+                    className={`${
+                      config.get.theme === ThemeEnum.DARK
+                        ? 'cvs-d-hover'
+                        : 'cvs-l-hover'
+                    }`}
+                    align="center"
+                  >
+                    <Flex align="center" gap={15}>
+                      <Avatar
+                        shape="square"
+                        alt={member?.nickname?.charAt(0)}
+                        size={35}
+                      >
+                        {member?.nickname?.charAt(0)}
+                      </Avatar>
+                      <Flex gap={1} vertical justify="space-between">
+                        <Text style={{ fontSize: 14 }}>{member?.nickname}</Text>
+                      </Flex>
+                    </Flex>
+                  </Flex>
+                ))}
+              </Flex>
+            </Collapse.Panel>
+          </Collapse>
+        )}
+      </Flex>
+    );
+  };
+
+  const ContentView = (cvs: Conversations) => {
+    // Conversation Name
+    const cvsName =
+      cvs?.type === ConversationEnum.ROOMS
+        ? cvs?.rooms?.[0]?.name
+        : cvs?.chats?.[0]?.friend?.nickname;
+
+    // Return
     return currCvsLoading === true || (currCvsLoading === false && cvs) ? (
       <Flex vertical style={{ height: '100%' }}>
-        <ChatHead token={token} cvs={cvs} currCvsLoading={currCvsLoading} />
+        <Flex
+          style={{
+            padding: '17px',
+            backgroundColor: token.colorBgBase,
+            borderBottom: `1px solid ${token.colorBorder}`,
+          }}
+        >
+          <Flex align="center" justify="space-between" flex={1}>
+            <Flex align="center" gap={15}>
+              {!currCvsLoading ? (
+                <Fragment>
+                  <Badge
+                    dot
+                    style={{
+                      padding: 3.5,
+                      backgroundColor: token.colorSuccess,
+                    }}
+                    status="processing"
+                    offset={[-1, '100%']}
+                  >
+                    <Avatar shape="square" alt={'1'} size={35}>
+                      {cvsName?.charAt(0)}
+                    </Avatar>
+                  </Badge>
+                  <Flex gap={1} vertical justify="space-between">
+                    <Text style={{ fontSize: 13 }}>{cvsName}</Text>
+                    <Text type="secondary" style={{ fontSize: 11 }}>
+                      Đang hoạt động
+                    </Text>
+                  </Flex>
+                </Fragment>
+              ) : (
+                <Flex gap={10} align="center">
+                  <Skeleton.Avatar
+                    active
+                    size={35}
+                    shape="square"
+                    className="flex-align"
+                  />
+                  <Skeleton.Input
+                    active
+                    style={{ width: 100, height: 35 }}
+                    className="flex-align"
+                  />
+                </Flex>
+              )}
+            </Flex>
+            <Button
+              onClick={showDrawer}
+              style={{ height: 'unset', padding: '0' }}
+            >
+              <Flex align="center">
+                <DotsThree size={20} />
+              </Flex>
+            </Button>
+          </Flex>
+        </Flex>
         <ChatContent mes={messages} cvsId={cvs?._id} setMes={setMessages} />
         <Flex
           style={{
@@ -394,6 +665,9 @@ const Chat: FC = () => {
           {ContentView(cvsContext.current.get)}
         </Col>
       </Row>
+      <Drawer title="Thông tin cuộc trò chuyện" onClose={onClose} open={open}>
+        {DrawerContent(cvsContext.current.get)}
+      </Drawer>
     </Fragment>
   );
 };

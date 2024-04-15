@@ -49,8 +49,14 @@ class MessagesController {
   async upload(req, res, next) {
     const files = req.files;
     try {
+        // Upload
         const uploadedFilesInfo = await messagesServices.upload(files);
-        return res.status(200).json({ uploadedFilesInfo });
+
+        // Return res
+        return res.status(201).json({ 
+          data: uploadedFilesInfo,
+          status: 200
+         });
     } catch (error) {
         console.error('Error uploading file(s) to S3:', error);
         return res.status(500).json({ message: 'Error uploading file(s) to S3' });
@@ -122,7 +128,6 @@ class MessagesController {
 
   async forwardMessage(req, res, next) {
     const id = req.params;
-    console.log("id", id);
     const { conversationId } = req.body;
     try {
       const newMessage = await messagesServices.forwardMessage(id, conversationId);

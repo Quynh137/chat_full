@@ -31,7 +31,6 @@ const reducerHandlers: ReducerHandler = {
     };
   },
   LOGOUT(state: AuthState): AuthState {
-    console.log(state)
     // Return
     return {
       ...state,

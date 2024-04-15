@@ -8,7 +8,7 @@ import { fetcher } from '@/common/utils/fetcher';
 import { Response } from '@/common/types/response/response.type';
 import { ConversationEnum } from '@/common/enum/conversation.enum';
 import { ThemeEnum } from '@/common/enum/theme.enum';
-import AddFriendsToGroupModal from '@/client/components/modals/friend/add/group';
+import CreateGroupModal from '@/client/components/modals/friend/add/group';
 import EmptyHorizontal from '@/client/components/empty/horizontal.empty';
 
 // Text
@@ -92,13 +92,12 @@ const ChatSide: React.FC<Props> = ({ cvsContext, token, user }: Props) => {
       setCsvLoading(true);
 
       // Get conversations
-      const res: Response = await fetcher({
+      const res: any = await fetcher({
         method: 'GET',
         url: '/conversations/page',
         payload: { page: 1, user: user.get?._id },
       });
 
-      console.log(res)
 
       // Check response and handle data
       if (res?.status === 200) cvsContext.list.set(res?.data);
@@ -131,7 +130,7 @@ const ChatSide: React.FC<Props> = ({ cvsContext, token, user }: Props) => {
             </Text>
             <Flex gap={5}>
               <AddFriendsModal />
-              <AddFriendsToGroupModal />
+              <CreateGroupModal />
             </Flex>
           </Flex>
           <Text

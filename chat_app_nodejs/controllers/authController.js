@@ -80,7 +80,6 @@ class AuthController {
         otp,
       });
     } catch (error) {
-      console.log(error.message);
       res.status(500).json({
         message: error.message,
         status: 500,

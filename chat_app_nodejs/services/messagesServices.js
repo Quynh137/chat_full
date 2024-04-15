@@ -18,8 +18,6 @@ class MessagesServices {
 
       const last_message = await conversationService.set_last_message(created);
 
-      console.log(created._doc);
-
       // Return
       return {...created._doc, last_message };
     } catch (error) {
@@ -124,17 +122,17 @@ class MessagesServices {
             ACL: 'public-read',
             ContentType: file.mimetype,
         };
+
+        // Exception
         try {
             const s3Data = await s3.upload(uploadParams).promise();
-            return {
-                type: file.mimetype.includes('image') ? 'image' : file.mimetype.includes('video') ? 'video' : 'file',
-                media: {
-                    name: file?.originalname,
-                    type: file.mimetype,
-                    size: file.size,
-                    url: s3Data.Location
-                }
-            };
+
+            // Destructuring 
+            const {buffer, filename, originalname, ...data} = file;
+
+            
+            // Return
+            return {...data, filename: filePath, originalname: filePath};
         } catch (error) {
             console.error('Error uploading file to S3:', error);
             throw new Error(error.message);
@@ -144,6 +142,22 @@ class MessagesServices {
     return await Promise.all(uploadPromises);
 };
 
+// async forwardMessage(messageId, chat) {
+//   try {
+//     const id = messageId._id;
+//     const {body} = chat;
+//     const message = await messagesModel.findOne(id);
+    
+//     if (!message) {
+//       throw new Error('Message not found');
+//     }
+
+//     const newMessage = new messagesModel({
+//       nickname: message.sender.nickname,
+//       image: message.sender.image,
+//       sender: message.sender.user,
+//       content: message.content,
+//       type: message.type,
 
 async forwardMessage(messageId, chat) {
   try {

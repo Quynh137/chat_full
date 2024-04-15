@@ -58,8 +58,6 @@ class FriendsServices {
       // Check xem minh co phai nguoi gui khong
       const isSender = isFriend?.inviter?.user?.toString() === inviter;
 
-      console.log(isFriend, inviter);
-
       // Return
       return {
         // Cai nay la trang thai ban be, neu da ton tai trong conllection thi tra ve trang thai trong collec, con neu trong collect chua co thi tra ve NOT_YET
@@ -81,8 +79,12 @@ class FriendsServices {
       // Exception
       const finded = await friendsModel
         .find({
-          $text: { $search: params.search },
-          "inviter.user": params.inviter,
+          $or: [
+            { 'inviter.nickname': params.search },
+            { 'friend.nickname': params.search },
+          ],
+          'inviter.user': params.inviter,
+          state: "ACCEPTED",
           block: false,
         })
         .limit(params.limit);

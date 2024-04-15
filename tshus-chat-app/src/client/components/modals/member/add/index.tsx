@@ -1,9 +1,9 @@
 import { UsersThree } from '@phosphor-icons/react';
-import { Button, Modal } from 'antd';
+import { Button, Modal, Tooltip } from 'antd';
 import { FC, useState } from 'react';
-import FindAndSelectFriend from './find';
+import FindAndSelectMember from './find';
 
-const CreateGroupModal: FC = () => {
+const AddMemberToGroupModal: FC = () => {
   // Open State
   const [open, setOpen] = useState(false);
 
@@ -19,7 +19,13 @@ const CreateGroupModal: FC = () => {
   // Return
   return (
     <>
-      <Button type="text" icon={<UsersThree size={20} />} onClick={showModal} />
+      <Tooltip title="Thêm thành viên">
+        <Button
+          type="text"
+          icon={<UsersThree size={20} />}
+          onClick={showModal}
+        />
+      </Tooltip>
       <Modal
         title="Thêm thành viên vào nhóm chat"
         open={open}
@@ -28,11 +34,11 @@ const CreateGroupModal: FC = () => {
         footer={[]}
       >
         <div style={{ paddingTop: 10 }}>
-          <FindAndSelectFriend changeOpen={setOpen} />
+          <FindAndSelectMember changeOpen={setOpen} />
         </div>
       </Modal>
     </>
   );
 };
 
-export default CreateGroupModal;
+export default AddMemberToGroupModal;

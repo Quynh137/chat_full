@@ -3,7 +3,7 @@ const friendsService = require("./friendsServices");
 
 class UsersServices {
   // Get Services
-  async get(props) {
+  async get(props) {                           
     // Exception
     try {
       // Users
@@ -12,6 +12,7 @@ class UsersServices {
       // Return
       return users;
     } catch (error) {
+          
       // Throw error
       throw new Error(error.message);
     }

@@ -24,7 +24,7 @@ class AuthServices {
 
       // Token
       const token = createToken(user._id);
-
+      
       // Remove password
       const { password, lastname, firstname, ...data } = user._doc;
 

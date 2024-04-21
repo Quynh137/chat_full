@@ -16,6 +16,9 @@ function App() {
   const fetchMoreData = () => {
     // a fake async api call like which sends
     // 20 more records in 1.5 secs
+    
+    
+
     setTimeout(() => {
       setState({
         items: state.items.concat(Array.from({ length: 20 })),
@@ -25,7 +28,7 @@ function App() {
 
   return (
     <div>
-      <h1>demo: react-infinite-scroll-component</h1>
+      <h1>Lời mời kết bạn</h1>
       <hr />
       <div
         id="scrollableDiv"

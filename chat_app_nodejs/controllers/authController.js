@@ -10,7 +10,7 @@ class AuthController {
     try {
       // Call services
       const loged = await authServices.login(body);
-
+      console.log(loged);
       // Send Response
       res.status(200).json({
         data: loged,
@@ -32,7 +32,7 @@ class AuthController {
       const { email, otp } = req.body;
   
       const isOTPValid = await authServices.verifyOTP(email, otp);
-  
+      
       if (!isOTPValid) {
         return res.status(400).json({ message: 'Invalid OTP' });
       }

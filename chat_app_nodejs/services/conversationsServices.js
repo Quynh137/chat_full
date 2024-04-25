@@ -179,6 +179,11 @@ class ConversationsServices {
                   as: 'roommembers',
                 },
               },
+              {
+                $match: {
+                  roommembers: { $not: { $size: 0 } },
+                },
+              },
             ],
           },
         },
@@ -186,7 +191,11 @@ class ConversationsServices {
           $match: {
             $expr: {
               $not: {
-                $and: [{ $eq: ['$chats', []] }, { $eq: ['$rooms', []] }],
+                $and: [
+                  {
+                    $and: [{ $eq: ['$chats', []] }, { $eq: ['$rooms', []] }],
+                  },
+                ],
               },
             },
           },

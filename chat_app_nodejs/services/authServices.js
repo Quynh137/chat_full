@@ -5,7 +5,6 @@ const OTP = require("../core/otp");
 const validator = require("validator");
 var cache = require('memory-cache');
 
-
 class AuthServices {
   // Login
   async login(props) {

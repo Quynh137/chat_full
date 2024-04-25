@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const {send, search, cancelRequest, acceptFriendRequest, unfriend} = require("../controllers/friendsController");
+const {send, search, cancel, accept, unfriend, page, load_request} = require("../controllers/friendsController");
 
 // [GET] /search
 router.get("/search", search);
@@ -8,9 +8,14 @@ router.get("/search", search);
 // [GET] /send
 router.post("/send", send);
 
-router.delete('/cancelRequest', cancelRequest);
+// [GET] /send
+router.get("/page", page);
 
-router.put('/acceptFriendRequest', acceptFriendRequest);
+router.delete('/cancel', cancel);
+
+router.get('/load_request', load_request);
+
+router.post('/accept', accept);
 
 router.delete('/unfriend', unfriend);
 

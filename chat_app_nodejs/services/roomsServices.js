@@ -23,7 +23,7 @@ class RoomsServices {
         // Check created room
         if (created_room) {
           // Add members
-          const add_room_members = await roomMembersService.add(
+          const add_room_members = await roomMembersService.create(
             created_room._id,
             body.creater,
             body.members,

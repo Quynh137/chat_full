@@ -1,7 +1,6 @@
-const { default: mongoose } = require("mongoose");
 const messagesModel = require("../models/messagesModel");
 const { s3, S3_BUCKET_NAME } = require('../config/aws');
-const conversationService = require('./conversationsServices')
+const cvsServices = require('./conversationsServices')
 
 class MessagesServices {
   async create(props) {
@@ -16,7 +15,7 @@ class MessagesServices {
         seenders: [],
       });
 
-      const last_message = await conversationService.set_last_message(created);
+      const last_message = await cvsServices.set_last_message(created);
 
       // Return
       return {...created._doc, last_message };
@@ -84,6 +83,27 @@ class MessagesServices {
       return true;
     } catch (error) {
       // Log any caught errors
+      throw new Error(error.message);
+    }
+  }
+
+  async transfer(body) {
+    // Exceptionn
+    try {
+      // Created
+      const tranfer = await messagesModel.create({
+        ...body,
+        seenders: [],
+        send_at: new Date(),
+      });
+
+      // Last message
+      const last_message = await cvsServices.set_last_message(tranfer);
+
+      // Return
+      return { ...tranfer._doc, last_message };
+    } catch (error) {
+      // throw http exception
       throw new Error(error.message);
     }
   }

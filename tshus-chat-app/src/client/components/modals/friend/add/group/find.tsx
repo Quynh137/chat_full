@@ -1,4 +1,10 @@
-import React, { Dispatch, SetStateAction, useMemo, useRef, useState } from 'react';
+import React, {
+  Dispatch,
+  SetStateAction,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   App,
   Avatar,
@@ -112,17 +118,29 @@ async function fetchUserList(user: User, search: string): Promise<UserValue[]> {
     url: '/friends/search',
     payload: {
       search,
-      inviter: user,
+      inviter: user?._id,
       limit: 5,
     },
   });
 
   // Return
-  return res?.data?.map((user: Friends) => ({
-    label: `${user.friend.nickname}`,
-    value: user.friend.user,
-    title: user.friend.avatar,
-  }));
+  return res?.data?.map((data: Friends) => {
+
+    // Is Inviter
+    const isInviter = data?.inviter?.user === user?._id;
+
+    console.log(isInviter)
+
+    // Result
+    const result = isInviter ? data.friend : data.inviter;
+
+    // Return
+    return {
+      label: `${result.nickname}`,
+      value: result.user,
+      title: result.avatar,
+    };
+  });
 }
 
 type FormFindType = {
@@ -132,10 +150,11 @@ type FormFindType = {
 
 type FindAndSelectFriendProps = {
   changeOpen: Dispatch<SetStateAction<boolean>>;
-}
+};
 
-
-const FindAndSelectFriend: React.FC<FindAndSelectFriendProps> = ({changeOpen}) => {
+const FindAndSelectFriend: React.FC<FindAndSelectFriendProps> = ({
+  changeOpen,
+}) => {
   // Value state
   const [value, setValue] = useState<UserValue[]>([]);
 
@@ -184,7 +203,7 @@ const FindAndSelectFriend: React.FC<FindAndSelectFriendProps> = ({changeOpen}) =
       if (res?.status === 201) {
         // Close modal
         changeOpen(false);
-        
+
         // Show message success
         message.success('Tạo nhóm chat thành công!');
       } else {

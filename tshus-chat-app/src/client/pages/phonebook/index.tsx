@@ -1,6 +1,7 @@
 import { ChaterType } from '@/common/types/user/chater.type';
-import { BASE_URL } from '@/common/utils/fetcher';
+import { BASE_URL, fetcher } from '@/common/utils/fetcher';
 import {
+  App,
   Avatar,
   Button,
   Col,
@@ -11,82 +12,12 @@ import {
   theme,
   Typography,
 } from 'antd';
-import { Fragment } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import Search from 'antd/es/input/Search';
-import { FriendStateEnum } from '@/common/enum/friend-state.enum';
 import { formatToDateTime } from '@/common/utils/date';
-
-// Friend Request Type
-type FriendRequestType = {
-  inviter: ChaterType;
-  state: FriendStateEnum;
-  createdAt: Date;
-};
-
-// Friend Request Type
-type FriendSenderType = {
-  friend: ChaterType;
-  state: FriendStateEnum;
-  createdAt: Date;
-};
-
-// Friend list
-const friendsList: ChaterType[] = [
-  {
-    nickname: 'Đào Việt Bảo',
-    user: '65f80266838a525b58e2dc28',
-    avatar: '',
-  },
-  {
-    nickname: 'Đào Việt Bảo',
-    user: '65f80266838a525b58e2dc28',
-    avatar: '',
-  },
-];
-
-// Friend list
-const friendRequest: FriendRequestType[] = [
-  {
-    inviter: {
-      nickname: 'Đào Việt Bảo',
-      user: '65f80266838a525b58e2dc28',
-      avatar: '',
-    },
-    state: FriendStateEnum.PENDING,
-    createdAt: new Date(),
-  },
-  {
-    inviter: {
-      nickname: 'Đào Việt Bảo',
-      user: '65f80266838a525b58e2dc28',
-      avatar: '',
-    },
-    state: FriendStateEnum.PENDING,
-    createdAt: new Date(),
-  },
-];
-
-// Friend list
-const friendSender: FriendSenderType[] = [
-  {
-    friend: {
-      nickname: 'Đào Việt Bảo',
-      user: '65f80266838a525b58e2dc28',
-      avatar: '',
-    },
-    state: FriendStateEnum.PENDING,
-    createdAt: new Date(),
-  },
-  {
-    friend: {
-      nickname: 'Đào Việt Bảo',
-      user: '65f80266838a525b58e2dc28',
-      avatar: '',
-    },
-    state: FriendStateEnum.PENDING,
-    createdAt: new Date(),
-  },
-];
+import { Response } from '@/common/types/response/response.type';
+import { useAuth } from '@/client/hooks/use-auth';
+import EmptyHorizontal from '@/client/components/empty/horizontal.empty';
 
 // Use Token
 const { useToken } = theme;
@@ -97,8 +28,161 @@ const { Text } = Typography;
 type Props = {};
 
 export default function Phonebook({}: Props) {
+  // Auth
+  const auth = useAuth();
+
+  const { message } = App.useApp();
+
+  // List friends state
+  const [friendsList, setFriendsList] = useState<any[]>([]);
+
+  const [friendSender, setFriendSender] = useState<any[]>([]);
+
+  const [friendRequest, setFriendRequest] = useState<any[]>([]);
+
+  // Effect
+  useEffect(() => {
+    // Load friends
+    (async () => {
+      // Response
+      const res: Response = await fetcher({
+        method: 'GET',
+        url: '/friends/page',
+        payload: { user: auth?.get?._id },
+      });
+
+      if (res?.status === 200) {
+        // Set data
+        setFriendsList(res?.data);
+      }
+      // Return
+    })();
+
+    // Load request
+    (async () => {
+      // Response
+      const res: Response = await fetcher({
+        method: 'GET',
+        url: '/friends/load_request',
+        payload: { user: auth?.get?._id },
+      });
+
+      // Check status
+      if (res?.status === 200) {
+        // Set request
+        setFriendRequest(res?.data?.request);
+
+        // Set sended
+        setFriendSender(res?.data?.sended);
+      }
+      // Return
+    })();
+  }, [auth?.get?._id]);
+
   // Token
   const { token } = useToken();
+
+  // Accept request
+  const acceptRequest = async (id: string) => {
+    // Response
+    const res: Response = await fetcher({
+      method: 'POST',
+      url: '/friends/accept',
+      payload: { id },
+    });
+
+    // Check status
+    if (res?.status === 200) {
+      // Index
+      const index = friendRequest.findIndex((i) => i?._id === id);
+
+      // Temp friends sender
+      const temp = friendRequest;
+
+      // Remove
+      if (index !== -1) {
+        // Remove
+        temp.splice(index, 1);
+
+        // Set new
+        index === 0 ? setFriendRequest([]) : setFriendRequest(temp);
+      }
+
+      // Success message
+      message.success('Đồng ý lời mời kết bạn thành công');
+    } else {
+      // error message
+      message.error('Đồng ý lời mời kết bạn thất bại');
+    }
+  };
+
+  // Cancel request
+  const cancelRequest = async (id: string) => {
+    // Response
+    const res: Response = await fetcher({
+      method: 'DELETE',
+      url: '/friends/cancel',
+      payload: { id },
+    });
+
+    // Check status
+    if (res?.status === 200) {
+      // Index
+      const index = friendRequest.findIndex((i) => i?._id === id);
+
+      // Temp friends sender
+      const temp = friendRequest;
+
+      // Remove
+      if (index !== -1) {
+        // Remove
+        temp.splice(index, 1);
+
+        // Set new
+        index === 0 ? setFriendRequest([]) : setFriendRequest(temp);
+      }
+
+      // Success message
+      message.success('Từ chối lời mời kết bạn thành công');
+    } else {
+      // error message
+      message.error('Từ chối lời mời kết bạn thất bại');
+    }
+  };
+
+  // Cancel request
+  const cancelSended = async (id: string) => {
+    // Response
+    const res: Response = await fetcher({
+      method: 'DELETE',
+      url: '/friends/cancel',
+      payload: { id },
+    });
+
+    // Check status
+    if (res?.status === 200) {
+      // Index
+      const index = friendSender.findIndex((i) => i?._id === id);
+
+      // Temp friends sender
+      const temp = friendSender;
+
+      // Remove
+      if (index !== -1) {
+        // Remove
+        temp.splice(index, 1);
+
+        // Set new
+        index === 0 ? setFriendSender([]) : setFriendSender(temp);
+      }
+
+      // Success message
+      message.success('Thu hồi lời mời kết bạn thành công');
+    } else {
+      // error message
+      message.error('Thu hồi lời mời kết bạn thất bại');
+    }
+  };
 
   // Return
   return (
@@ -143,33 +227,42 @@ export default function Phonebook({}: Props) {
               />
             </Flex>
             <Flex vertical gap={10}>
-              {friendsList?.map(({ user, nickname, avatar }: ChaterType) => (
-                <Flex vertical>
-                  <Divider orientation="left" plain orientationMargin="0">
-                    <Text
-                      style={{
-                        color: token.colorPrimary,
-                      }}
-                    >
-                      {nickname?.charAt(0)}
-                    </Text>
-                  </Divider>
-                  <Button style={{ height: 'unset', padding: '8px 10px' }}>
-                    <Flex align="center" gap={10}>
-                      <Avatar
-                        shape="square"
-                        size={27}
-                        src={`${BASE_URL}/${avatar}`}
+              {Array.from(Object.keys(friendsList))?.map(
+                (key: string, index: number) => (
+                  <Flex vertical key={index}>
+                    <Divider orientation="left" plain orientationMargin="0">
+                      <Text
+                        style={{
+                          color: token.colorPrimary,
+                        }}
                       >
-                        {nickname?.charAt(0)}
-                      </Avatar>
-                      <Text style={{ fontSize: 14, fontWeight: '400' }}>
-                        {nickname}
+                        {key}
                       </Text>
-                    </Flex>
-                  </Button>
-                </Flex>
-              ))}
+                    </Divider>
+                    {friendsList?.[key as keyof typeof friendsList]?.map(
+                      ({ nickname, avatar, user }: ChaterType) => (
+                        <Button
+                          style={{ height: 'unset', padding: '8px 10px' }}
+                          key={user}
+                        >
+                          <Flex align="center" gap={10}>
+                            <Avatar
+                              shape="square"
+                              size={27}
+                              src={`${BASE_URL}/${avatar}`}
+                            >
+                              {nickname?.charAt(0)}
+                            </Avatar>
+                            <Text style={{ fontSize: 14, fontWeight: '400' }}>
+                              {nickname}
+                            </Text>
+                          </Flex>
+                        </Button>
+                      ),
+                    )}
+                  </Flex>
+                ),
+              )}
             </Flex>
           </Flex>
         </Col>
@@ -218,9 +311,9 @@ export default function Phonebook({}: Props) {
                 </Text>
               </Flex>
               <Row gutter={[20, 20]}>
-                {friendRequest?.map(
-                  ({ inviter, state, createdAt }: FriendRequestType) => (
-                    <Col span={6}>
+                {friendRequest?.length > 0 ? (
+                  friendRequest?.map(({ inviter, _id, createdAt }: any) => (
+                    <Col span={6} key={inviter?.user}>
                       <Flex
                         vertical
                         gap={20}
@@ -249,21 +342,33 @@ export default function Phonebook({}: Props) {
                                 color: token.colorTextDescription,
                               }}
                             >
-                              {formatToDateTime(createdAt.toString())}
+                              {formatToDateTime(createdAt?.toString())}
                             </Text>
                           </Flex>
                         </Flex>
                         <Flex gap={15} justify="space-between">
-                          <Button style={{ width: '100%' }} type="primary">
+                          <Button
+                            style={{ width: '100%' }}
+                            type="primary"
+                            onClick={() => acceptRequest(_id)}
+                          >
                             Đồng ý
                           </Button>
-                          <Button style={{ width: '100%' }} danger>
+                          <Button
+                            style={{ width: '100%' }}
+                            danger
+                            onClick={() => cancelRequest(_id)}
+                          >
                             Từ chối
                           </Button>
                         </Flex>
                       </Flex>
                     </Col>
-                  ),
+                  ))
+                ) : (
+                  <Col span={24}>
+                    <EmptyHorizontal desc="Không có lời mời kết bạn nào!" />
+                  </Col>
                 )}
               </Row>
             </Flex>
@@ -281,9 +386,9 @@ export default function Phonebook({}: Props) {
                 </Text>
               </Flex>
               <Row gutter={[20, 20]}>
-                {friendSender?.map(
-                  ({ friend, state, createdAt }: FriendSenderType) => (
-                    <Col span={6}>
+                {friendSender?.length > 0 ? (
+                  friendSender?.map(({ friend, _id, createdAt }) => (
+                    <Col span={6} key={friend?.user}>
                       <Flex
                         vertical
                         gap={20}
@@ -312,14 +417,20 @@ export default function Phonebook({}: Props) {
                                 color: token.colorTextDescription,
                               }}
                             >
-                              {formatToDateTime(createdAt.toString())}
+                              {formatToDateTime(createdAt?.toString())}
                             </Text>
                           </Flex>
                         </Flex>
-                        <Button>Thu hồi lời mời</Button>
+                        <Button onClick={() => cancelSended(_id)}>
+                          Thu hồi lời mời
+                        </Button>
                       </Flex>
                     </Col>
-                  ),
+                  ))
+                ) : (
+                  <Col span={24}>
+                    <EmptyHorizontal desc="Chưa gửi lời mời kết bạn nào!" />
+                  </Col>
                 )}
               </Row>
             </Flex>

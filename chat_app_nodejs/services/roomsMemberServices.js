@@ -106,6 +106,33 @@ class roomMembersServices {
     }
   }
 
+  async transfer(body) {
+    try {
+      const finded = await this.check_role(body.user, "MANAGER");
+        // Tìm một thành viên khác trong nhóm để chuyển chức vụ
+       
+        if(finded){
+          const newManager = await roomMembersModel.findOneAndUpdate(
+            { room: body.room, user: { $ne: body.user } },
+            { role: "MANAGER" },
+            { new: true }
+        );
+
+        // Cập nhật chức vụ của tất cả thành viên khác thành MEMBER
+        await roomMembersModel.updateMany(
+            { room: body.room, user: { $ne: newManager.user } },
+            { role: "MEMBER" }
+        );
+
+        // Trả về thông tin của thành viên đã được chuyển quyền MANAGER
+        return newManager;
+        }
+    } catch (error) {
+        throw new Error(error.message);
+    }
+}
+
+
   async page(params) {
     // Exceptionn
     try {

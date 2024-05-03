@@ -120,7 +120,8 @@ const DELETE = async (
     : null;
 
   // Token
-  const accessToken: string | null = getCookie('token')?.accessToken;
+  // const accessToken: string | null = getCookie('token')?.accessToken;
+  const accessToken = getCookie('token');
 
   // Create Fetch
   const response: any = await fetch(

@@ -23,7 +23,7 @@ const UsersSchema = new mongoose.Schema(
     roles: { type: [String], enum: ["USER", "ADMIN"], default: ["USER"] },
     otp: {
       type: String,
-      required: true,
+      required: false,
     },
     mail_otp: { type: String, default: "", maxLength: 6 },
     avatar: { type: String, default: "" },

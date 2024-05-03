@@ -142,12 +142,13 @@ const UsersFinded: React.FC<Props> = React.memo(
       setTimeout(() => {
         // Check response and handle data
         if (res?.status !== 200) {
+          // Message error
           message.error('Gửi yêu cầu kết bạn thất bại');
         } else {
           // Set hasFriend
           setFriend((prev: UserHasFriend | null) => ({
             ...(prev as UserHasFriend),
-            friend: FriendStateEnum.PENDING,
+            state: FriendStateEnum.PENDING,
             isSender: true,
           }));
 

@@ -10,6 +10,7 @@ const authenticateJWT = async (req, res, next) => {
     const decoded = jwt.verify(token, ACCESS_TOKEN_SECRET);
 
     const user = await User.findById(decoded.id);
+    console.log("abc", user)
     if(!user){
         return res.status(403).json({
             message: "Token lỗi!",

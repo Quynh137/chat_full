@@ -75,10 +75,10 @@ const DeleteMemberFromGroupModal: FC<Props> = ({ roommembers }: Props) => {
         setOpen(false);
 
         // Show message success
-        message.error('Thêm thành viên thành công');
+        message.success('Xoá thành viên thành công');
       } else {
         // Show message error
-        message.error('Thêm thành viên thất bại, vui lòng thử lại');
+        message.error('Xoá thành viên thất bại, vui lòng thử lại');
       }
     }
   };

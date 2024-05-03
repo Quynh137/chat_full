@@ -6,7 +6,7 @@ import {
   UndoOutlined,
   ForwardOutlined,
   UploadOutlined,
-} from '@ant-design/icons'; //import đống này nha (mây cái icon đồ đó)
+} from '@ant-design/icons';
 
 import {
   App,

@@ -153,26 +153,6 @@ class MessagesController {
       }) && next(error);
     }
   }
-
-  async forwardMessage(req, res, next) {
-    const id = req.params;
-    const { conversationId } = req.body;
-    try {
-      const newMessage = await messagesServices.forwardMessage(
-        id,
-        conversationId,
-      );
-      res.status(200).json({
-        message: "Chuyển tin nhắn thành công",
-        status: 200,
-      });
-    } catch (error) {
-      res.status(500).json({
-        messsages: error.message,
-        status: 500,
-      }) && next(error);
-    }
-  }
 }
 
 module.exports = new MessagesController();

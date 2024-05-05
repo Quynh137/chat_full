@@ -107,10 +107,10 @@ class AuthController {
   };
   
   async updatePassword(req, res) {
-    const { email, otp, password } = req.body;
+    const { email, password } = req.body;
     
     try {
-      const result = await authServices.updatePassword(email, otp, password);
+      const result = await authServices.updatePassword(email, password);
       res.status(200).json(result);
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });

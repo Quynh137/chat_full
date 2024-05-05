@@ -33,6 +33,8 @@ export default function Register() {
         // setShowOtpInput(false);
         if (isOTPValid) {
           setCurrentStep('register');
+          setShowOtpInput(false);
+
         } else {
           console.error('Invalid OTP');
         }

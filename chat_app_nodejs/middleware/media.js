@@ -8,8 +8,8 @@ const storage = multer.memoryStorage({
 const media = multer({
     storage: storage,
     limits: {
-        //giới hạn 256mb
-        fileSize: 256*1024*1024,
+        //giới hạn 10MB
+        fileSize: 1*1024*1024,
     }
 })
 

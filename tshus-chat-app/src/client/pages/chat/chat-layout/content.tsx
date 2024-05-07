@@ -7,6 +7,7 @@ import { Response } from '@/common/types/response/response.type';
 import { Messages } from '@/common/interface/Messages';
 import EmptyVertical from '@/client/components/empty/vertical.empty';
 
+
 type Props = {
   mes: Messages[];
   cvsId: any;

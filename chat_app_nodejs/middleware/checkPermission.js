@@ -16,7 +16,7 @@ const authenticateJWT = async (req, res, next) => {
             message: "Token lỗi!",
         });
     }
-
+    
     if (!user.roles.includes("USER")) {
         return res.status(400).json({
             message: "Bạn không đủ quyền làm việc này!",

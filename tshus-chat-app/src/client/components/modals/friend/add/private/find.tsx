@@ -181,7 +181,7 @@ const UsersFinded: React.FC<Props> = React.memo(
           },
         },
       });
- 
+
       setTimeout(() => {
         if (res?.status !== 200) {
           // Message error
@@ -248,9 +248,8 @@ const UsersFinded: React.FC<Props> = React.memo(
             justify="space-between"
             onClick={showModal}
             style={{ padding: '2px 3px', cursor: 'pointer' }}
-            className={`${
-              config.get.theme === 'dark' ? 'cvs-d-hover' : 'cvs-l-hover'
-            }`}
+            className={`${config.get.theme === 'dark' ? 'cvs-d-hover' : 'cvs-l-hover'
+              }`}
           >
             <Flex align="center" gap={15}>
               <Avatar

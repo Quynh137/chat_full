@@ -246,6 +246,7 @@ const ChatSide: React.FC<Props> = ({ cvsContext, token, user }: Props) => {
           </Flex>
         </Popover>
       </div>
+      
       <Flex vertical>
         {!csvLoading ? (
           cvsContext?.list.get?.length > 0 ? (

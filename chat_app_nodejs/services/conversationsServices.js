@@ -104,7 +104,7 @@ class ConversationsServices {
 
     // Exception
     try {
-      const limit = 10;
+      const limit = 20;
 
       const finded = await conversationsModel.aggregate([
         {
@@ -196,6 +196,7 @@ class ConversationsServices {
       ]);
 
       // Return
+      console.log(finded);
       return finded;
     } catch (error) {
       // Throw http exception

@@ -39,7 +39,7 @@ import { BASE_URL, fetcher } from '@/common/utils/fetcher';
 import { ThemeEnum } from '@/common/enum/theme.enum';
 import { useConfig } from '@/common/hooks/use-config';
 import { css } from '@emotion/css';
-import { formatToTime } from '@/common/utils/date';
+import { formatDate } from '@/common/utils/date';
 import { useState } from 'react';
 import { Response } from '@/common/types/response/response.type';
 import { MesssageState } from '@/common/enum/message-state';
@@ -418,7 +418,7 @@ const ChatLine: React.FC<Props> = ({ data }: Props) => {
               <Flex style={{ order: 2 }} vertical gap={4}>
                 <Flex justify={justify} align="center" gap={20}>
                   <Text style={{ fontSize: 10, order: 2 }}>
-                    {formatToTime(data?.send_at)}
+                    {formatDate(data?.send_at)}
                   </Text>
                   <Text style={{ fontSize: 12.5, order: isSender ? 3 : 1 }}>
                     {data?.sender?.nickname}

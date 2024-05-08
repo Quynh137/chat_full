@@ -7,7 +7,7 @@ const ChaterType = mongoose.Schema({
 });
 
 const ChaterTypeIndex = mongoose.Schema({
-  nickname: { type: String, required: true, maxlength: 255, index: 'text'},
+  nickname: { type: String, required: true, maxlength: 255},
   user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   image: { type: String, default: "" },
 });

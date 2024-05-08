@@ -11,6 +11,7 @@ import '@/client/styles/client.css';
 import Register from '@/client/pages/register';
 import AuthGuard from './common/guard/auth';
 import GuestGuard from './common/guard/guest';
+import SendResetPass from '@/client/pages/forgot';
 
 const App: React.FC = () => {
   // Return
@@ -31,7 +32,10 @@ const App: React.FC = () => {
       <Route path="/" element={<Base />}>
         <Route path="auth/" element={<GuestGuard />}>
           <Route path="login" element={<Login />} />
-          <Route path="register" element={<Register />} />
+          <Route path="register" element={<Register />}/>
+          <Route path="forgot" element={<SendResetPass />}/>
+          
+
         </Route>
         <Route path="403" element={<Page403 />} />
         <Route path="403" element={<Page403 />} />

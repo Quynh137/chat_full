@@ -3,7 +3,7 @@ import { Button, Modal } from 'antd';
 import { FC, useState } from 'react';
 import FindAndSelectFriend from './find';
 
-const AddFriendsToGroupModal: FC = () => {
+const CreateGroupModal: FC = () => {
   // Open State
   const [open, setOpen] = useState(false);
 
@@ -21,7 +21,7 @@ const AddFriendsToGroupModal: FC = () => {
     <>
       <Button type="text" icon={<UsersThree size={20} />} onClick={showModal} />
       <Modal
-        title="Tạo nhóm chat mới"
+        title="Thêm thành viên vào nhóm chat"
         open={open}
         onOk={handleOk}
         onCancel={handleCancel}
@@ -35,4 +35,4 @@ const AddFriendsToGroupModal: FC = () => {
   );
 };
 
-export default AddFriendsToGroupModal;
+export default CreateGroupModal;

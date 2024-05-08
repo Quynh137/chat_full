@@ -10,6 +10,9 @@ const port = '3001';
 // Base Url
 export const BASE_URL = `http://${host}:${port}`;
 
+// Base Url
+export const AWS_URL = `https://myimagechat.s3.ap-southeast-1.amazonaws.com`;
+
 // API api
 const api = axios.create({
   baseURL: BASE_URL,
@@ -117,7 +120,8 @@ const DELETE = async (
     : null;
 
   // Token
-  const accessToken: string | null = getCookie('token')?.accessToken;
+  // const accessToken: string | null = getCookie('token')?.accessToken;
+  const accessToken = getCookie('token');
 
   // Create Fetch
   const response: any = await fetch(

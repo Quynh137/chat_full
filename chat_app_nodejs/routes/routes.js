@@ -7,28 +7,30 @@ const conversationsRoute = require("../routes/conversationsRoute");
 const friendsRoute = require("../routes/friendsRoute");
 const roomsRoute = require("../routes/roomsRoute");
 const roomMembersRoute = require("../routes/roomMembersRoute");
+const authenticateJWT = require('../middleware/checkPermission');
+
 
 const routes = (app) => {
   // [ROUTE] /users
-  app.use("/users", usersRoute);
+  app.use("/users", authenticateJWT, usersRoute);
 
   // [ROUTE] /chats
-  app.use("/chats", chatsRoute);
+  app.use("/chats", authenticateJWT, chatsRoute);
 
   // [ROUTE] /messages
-  app.use("/messages", messagesRoute);
+  app.use("/messages",authenticateJWT, messagesRoute);
 
   // [ROUTE] /messages
-  app.use("/conversations", conversationsRoute);
+  app.use("/conversations",authenticateJWT, conversationsRoute);
 
   // [ROUTE] /messages
-  app.use("/friends", friendsRoute);
+  app.use("/friends",authenticateJWT, friendsRoute);
 
   // [ROUTE] /rooms
-  app.use("/rooms", roomsRoute);
+  app.use("/rooms",authenticateJWT, roomsRoute);
 
   // [ROUTE] /roommembers
-  app.use("/roommembers", roomMembersRoute);
+  app.use("/roommembers",authenticateJWT, roomMembersRoute);
 
   // [ROUTE] /auth
   app.use("/auth", authRoute);

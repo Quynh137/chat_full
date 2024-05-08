@@ -165,10 +165,11 @@ export default function Login() {
               style={{
                 float: 'right',
               }}
-              to=""
+              to="/auth/forgot"
             >
               Quên mật khẩu?
             </Link>
+
           </Form.Item>
           <Form.Item style={{ marginBottom: '0px' }}>
             <Button

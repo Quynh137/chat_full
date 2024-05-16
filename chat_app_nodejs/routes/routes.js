@@ -12,10 +12,10 @@ const authenticateJWT = require('../middleware/checkPermission');
 
 const routes = (app) => {
   // [ROUTE] /users
-  app.use("/users", authenticateJWT, usersRoute);
+  app.use("/users",authenticateJWT, usersRoute);
 
   // [ROUTE] /chats
-  app.use("/chats", authenticateJWT, chatsRoute);
+  app.use("/chats",authenticateJWT, chatsRoute);
 
   // [ROUTE] /messages
   app.use("/messages",authenticateJWT, messagesRoute);
@@ -27,10 +27,10 @@ const routes = (app) => {
   app.use("/friends",authenticateJWT, friendsRoute);
 
   // [ROUTE] /rooms
-  app.use("/rooms",authenticateJWT, roomsRoute);
+  app.use("/rooms", roomsRoute);
 
   // [ROUTE] /roommembers
-  app.use("/roommembers",authenticateJWT, roomMembersRoute);
+  app.use("/roommembers", roomMembersRoute);
 
   // [ROUTE] /auth
   app.use("/auth", authRoute);

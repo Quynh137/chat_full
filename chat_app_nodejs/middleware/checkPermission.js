@@ -10,17 +10,12 @@ const authenticateJWT = async (req, res, next) => {
     const decoded = jwt.verify(token, ACCESS_TOKEN_SECRET);
 
     const user = await User.findById(decoded.id);
-    console.log("abc", user)
     if(!user){
         return res.status(403).json({
             message: "Token lỗi!",
         });
     }
-<<<<<<< HEAD
-    
-=======
 
->>>>>>> 0ea8fedb010380818218161aae4b407f41ecabeb
     if (!user.roles.includes("USER")) {
         return res.status(400).json({
             message: "Bạn không đủ quyền làm việc này!",

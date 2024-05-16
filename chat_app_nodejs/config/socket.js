@@ -23,7 +23,7 @@ const connectSocket = () => {
     socket.on("chat-message", async (data) => {
       // Message
       const message = await messagesServices.chats(data);
-
+      console.log(message);
       // Send
       io.emit("chats", message);
 

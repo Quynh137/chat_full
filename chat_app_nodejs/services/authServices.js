@@ -81,13 +81,13 @@ class AuthServices {
         };
       }
 
-      if (!validator.isStrongPassword(password)) {
-        //  Return
-        return {
-          status: 400,
-          message: "Password must be strong..",
-        };
-      }
+      // if (!validator.isStrongPassword(password)) {
+      //   //  Return
+      //   return {
+      //     status: 400,
+      //     message: "Password must be strong..",
+      //   };
+      // }
 
       //  Salt password
       const salt = await bcrypt.genSalt(10);

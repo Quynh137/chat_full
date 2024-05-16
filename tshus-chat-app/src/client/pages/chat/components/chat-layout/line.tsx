@@ -30,11 +30,7 @@ import { AWS_URL, BASE_URL, fetcher } from '@/common/utils/fetcher';
 import { ThemeEnum } from '@/common/enum/theme.enum';
 import { useConfig } from '@/common/hooks/use-config';
 import { css } from '@emotion/css';
-<<<<<<< HEAD
-import { formatDate } from '@/common/utils/date';
-=======
 import { formatToTime } from '@/common/utils/date';
->>>>>>> 0ea8fedb010380818218161aae4b407f41ecabeb
 import EmptyHorizontal from '@/client/components/empty/horizontal.empty';
 import { useConversations } from '@/client/hooks/user-conversations';
 import { ConversationEnum } from '@/common/enum/conversation.enum';
@@ -344,11 +340,7 @@ const ChatLine: React.FC<Props> = ({ data }: Props) => {
             <Flex style={{ order: 2 }} vertical gap={4}>
               <Flex justify={justify} align="center" gap={10}>
                 <Text style={{ fontSize: 10, order: 2 }}>
-<<<<<<< HEAD
-                  {formatDate(data?.send_at)}
-=======
                   {formatToTime(data?.send_at)}
->>>>>>> 0ea8fedb010380818218161aae4b407f41ecabeb
                 </Text>
                 <Text
                   style={{ fontSize: 12.5, order: isSender ? 3 : 1 }}
@@ -375,7 +367,7 @@ const ChatLine: React.FC<Props> = ({ data }: Props) => {
                     />
                   ) : (
                     <MessageFileLine
-                      token={token}
+                      token={token} 
                       isSender={isSender}
                       files={data?.files}
                       msg={data?.messages}

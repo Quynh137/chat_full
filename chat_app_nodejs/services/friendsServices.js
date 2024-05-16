@@ -18,46 +18,59 @@ class FriendsServices {
     }
   }
 
-  //Đặt trạng thái mối quan hệ bạn bè
-  async page(props) {
-    // Exception
-    try {
-      // Created
-      const friend = await friendsModel.find({
-        $and: [
-          {
-            $or: [
-              { "inviter.user": props.user },
-              { "friend.user": props.user },
-            ],
-          },
-          { state: "ACCEPTED" },
-          { block: false },
-        ],
-      });
+  // Đặt trạng thái mối quan hệ bạn bè
+async page(props) {
+  try {
+    const friends = await friendsModel.find({
+      $and: [
+        {
+          $or: [
+            { "inviter.user": props.user },
+            { "friend.user": props.user },
+          ],
+        },
+        { state: "ACCEPTED" },
+        { block: false },
+      ],
+    });
 
-      let data = {};
-      
-      // Data
-      friend?.forEach((i) => {
-        // Check is inviter
-        if (i?.inviter?.user === props.user) {
-          // Group to
-          data[i.friend.nickname.charAt(0).toUpperCase()] = [i?.inviter];
-        } else {
-          // Group to
-          data[i.inviter.nickname.charAt(0).toUpperCase()] = [i?.inviter];
+    let data = {};
+
+    friends?.forEach((i) => {
+      // Check if the current user is the inviter
+      if (i.inviter.user.toString() === props.user) {
+        // Group by the first character of friend's nickname
+        const key = i.friend.nickname.charAt(0).toUpperCase();
+        if (!data[key]) {
+          data[key] = [];
         }
-      });
-      
-      //  Return
-      return data;
-      
-    } catch (error) {
-      // Throw error
-      throw new Error(error.message);
-    }
+        data[key].push({
+          nickname: i.friend.nickname,
+          avatar: i.friend.image,
+          user: i.friend.user.toString(),
+        });
+      } else if (i.friend.user.toString() === props.user) {
+        // Group by the first character of inviter's nickname
+        const key = i.inviter.nickname.charAt(0).toUpperCase();
+        if (!data[key]) {
+          data[key] = [];
+        }
+        data[key].push({
+          nickname: i.inviter.nickname,
+          avatar: i.inviter.image,
+          user: i.inviter.user.toString(),
+        });
+      }
+    });
+
+    // Return the organized data
+    return data;
+  } catch (error) {
+    // Throw error
+    throw new Error(error.message);
   }
+}
+
 
   async load_request(props) {
     // Exception
@@ -139,33 +152,27 @@ class FriendsServices {
   async search(params) {
     // Exception
     try {
-      // Exception
+      // Tạo một biến để lưu trữ các điều kiện tìm kiếm
+      const searchConditions = [];
+
+      // Tìm kiếm dựa trên một phần của tên của inviter hoặc friend
+      searchConditions.push({
+        $or: [
+          { "inviter.nickname": { $regex: params.search, $options: 'i' } }, // $regex: Tìm kiếm dựa trên một phần của tên, $options: 'i' để không phân biệt chữ hoa chữ thường
+          { "friend.nickname": { $regex: params.search, $options: 'i' } },
+        ],
+      });
+
+      // Thêm các điều kiện khác (state và block)
+      searchConditions.push({ state: "ACCEPTED" });
+      searchConditions.push({ block: false });
+
+      // Thực hiện truy vấn với các điều kiện tìm kiếm được tổng hợp
       const finded = await friendsModel
-        .find({
-          $and: [
-            {
-              $or: [
-                {
-                  $and: [
-                    { "inviter.nickname": params.search },
-                    { "friend.user": params.inviter },
-                  ],
-                },
-                {
-                  $and: [
-                    { "friend.nickname": params.search },
-                    { "inviter.user": params.inviter },
-                  ],
-                },
-              ],
-            },
-            { state: "ACCEPTED" },
-            { block: false },
-          ],
-        })
+        .find({ $and: searchConditions })
         .limit(params.limit);
 
-      // Return
+      // Trả về kết quả
       return finded;
     } catch (error) {
       // Throw http exception

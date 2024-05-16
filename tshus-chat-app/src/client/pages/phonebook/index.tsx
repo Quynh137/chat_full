@@ -18,6 +18,7 @@ import { formatToDateTime } from '@/common/utils/date';
 import { Response } from '@/common/types/response/response.type';
 import { useAuth } from '@/client/hooks/use-auth';
 import EmptyHorizontal from '@/client/components/empty/horizontal.empty';
+import InfiniteScroll from 'react-infinite-scroll-component';
 
 // Use Token
 const { useToken } = theme;
@@ -25,20 +26,9 @@ const { useToken } = theme;
 // Text
 const { Text } = Typography;
 
-<<<<<<< HEAD
-  const fetchMoreData = () => {
-    // a fake async api call like which sends
-    // 20 more records in 1.5 secs
-    
-    
-
-    setTimeout(() => {
-      setState({
-        items: state.items.concat(Array.from({ length: 20 })),
-=======
 type Props = {};
 
-export default function Phonebook({}: Props) {
+export default function Phonebook({ }: Props) {
   // Auth
   const auth = useAuth();
 
@@ -60,7 +50,6 @@ export default function Phonebook({}: Props) {
         method: 'GET',
         url: '/friends/page',
         payload: { user: auth?.get?._id },
->>>>>>> 0ea8fedb010380818218161aae4b407f41ecabeb
       });
 
       if (res?.status === 200) {
@@ -198,28 +187,6 @@ export default function Phonebook({}: Props) {
 
   // Return
   return (
-<<<<<<< HEAD
-    <div>
-      <h1>Lời mời kết bạn</h1>
-      <hr />
-      <div
-        id="scrollableDiv"
-        style={{
-          height: 300,
-          overflow: 'auto',
-          display: 'flex',
-          flexDirection: 'column-reverse',
-        }}
-      >
-        <InfiniteScroll
-          dataLength={state.items.length}
-          next={fetchMoreData}
-          hasMore={true}
-          style={{ display: 'flex', flexDirection: 'column-reverse' }}
-          inverse={true} //
-          loader={<h4>Loading...</h4>}
-          scrollableTarget="scrollableDiv"
-=======
     <Fragment>
       <Row style={{ height: '100%' }}>
         <Col
@@ -229,7 +196,6 @@ export default function Phonebook({}: Props) {
           sm={24}
           xs={24}
           style={{ borderRight: `1px solid ${token.colorBorder}` }}
->>>>>>> 0ea8fedb010380818218161aae4b407f41ecabeb
         >
           <Flex style={{ padding: 20 }} vertical>
             <Flex vertical>
@@ -262,43 +228,25 @@ export default function Phonebook({}: Props) {
               />
             </Flex>
             <Flex vertical gap={10}>
-              {Array.from(Object.keys(friendsList))?.map(
-                (key: string, index: number) => (
-                  <Flex vertical key={index}>
-                    <Divider orientation="left" plain orientationMargin="0">
-                      <Text
-                        style={{
-                          color: token.colorPrimary,
-                        }}
-                      >
-                        {key}
-                      </Text>
-                    </Divider>
-                    {friendsList?.[key as keyof typeof friendsList]?.map(
-                      ({ nickname, avatar, user }: ChaterType) => (
-                        <Button
-                          style={{ height: 'unset', padding: '8px 10px' }}
-                          key={user}
-                        >
-                          <Flex align="center" gap={10}>
-                            <Avatar
-                              shape="square"
-                              size={27}
-                              src={`${BASE_URL}/${avatar}`}
-                            >
-                              {nickname?.charAt(0)}
-                            </Avatar>
-                            <Text style={{ fontSize: 14, fontWeight: '400' }}>
-                              {nickname}
-                            </Text>
-                          </Flex>
-                        </Button>
-                      ),
-                    )}
-                  </Flex>
-                ),
-              )}
+              {Object.keys(friendsList).map((key, index) => (
+                <Flex vertical key={index}>
+                  <Divider orientation="left" plain orientationMargin="0">
+                    <Text style={{ color: token.colorPrimary }}>{key}</Text>
+                  </Divider>
+                  {friendsList[key as keyof typeof friendsList]?.map(({ nickname, avatar, user }:ChaterType) => (
+                    <Button style={{ height: 'unset', padding: '8px 10px' }} key={user}>
+                      <Flex align="center" gap={10}>
+                        <Avatar shape="square" size={27} src={`${BASE_URL}/${avatar}`}>
+                          {nickname.charAt(0)}
+                        </Avatar>
+                        <Text style={{ fontSize: 14, fontWeight: '400' }}>{nickname}</Text>
+                      </Flex>
+                    </Button>
+                  ))}
+                </Flex>
+              ))}
             </Flex>
+
           </Flex>
         </Col>
         <Col xl={19} lg={18} md={16} sm={0} xs={0} className="h-100">

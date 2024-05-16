@@ -205,7 +205,7 @@ class ConversationsServices {
       ]);
 
       // Return
-      console.log(finded);
+      // console.log(finded);
       return finded;
     } catch (error) {
       // Throw http exception

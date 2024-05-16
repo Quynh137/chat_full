@@ -223,7 +223,7 @@ const Chat: FC = () => {
         // Send Message
         socket.emit('chat-message', res);
       })
-      .catch(() => {});
+      .catch(() => { });
   };
 
   // First Loading Use Effect
@@ -356,9 +356,20 @@ const Chat: FC = () => {
     // Is room
     const isRoom = cvsContext.current.get?.type === ConversationEnum.ROOMS;
 
-    // Data
-    const data = isRoom ? cvs?.rooms?.[0] : cvs?.chats?.[0]?.friend;
+    const chats =cvsContext.current.get?.chats?.[0];
 
+    const isInviter = user.get?._id === chats?.inviter?.user;
+
+
+    // Data
+    const data = isRoom 
+    ?cvs?.rooms?.[0]
+    :isInviter 
+    ? cvs?.chats?.[0]?.friend
+    : cvs?.chats?.[0]?.inviter;
+
+  
+    
     // Return
     return (
       <Flex
@@ -395,7 +406,7 @@ const Chat: FC = () => {
           {isRoom && data?.roommembers?.length > 0 && (
             <Fragment>
               <AddMemberToGroupModal />
-              <DeleteMemberFromGroupModal roommembers={roommembers}/>
+              <DeleteMemberFromGroupModal roommembers={roommembers} />
             </Fragment>
           )}
         </Flex>
@@ -469,11 +480,10 @@ const Chat: FC = () => {
                     key={member._id}
                     justify="space-between"
                     style={{ cursor: 'pointer', padding: 2, borderRadius: 5 }}
-                    className={`${
-                      config.get.theme === ThemeEnum.DARK
-                        ? 'cvs-d-hover'
-                        : 'cvs-l-hover'
-                    }`}
+                    className={`${config.get.theme === ThemeEnum.DARK
+                      ? 'cvs-d-hover'
+                      : 'cvs-l-hover'
+                      }`}
                     align="center"
                   >
                     <Flex align="center" gap={15}>
@@ -499,11 +509,19 @@ const Chat: FC = () => {
   };
 
   const ContentView = (cvs: Conversations) => {
-    // Conversation Name
-    const cvsName =
-      cvs?.type === ConversationEnum.ROOMS
-        ? cvs?.rooms?.[0]?.name
-        : cvs?.chats?.[0]?.friend?.nickname;
+   
+    // Is Rooms
+    const isRooms = cvs?.type === ConversationEnum.ROOMS;
+
+    const chats = cvs?.chats?.[0];
+
+    const isInviter = user.get?._id === chats?.inviter?.user;
+
+    const cvsName = isRooms
+      ? cvs?.rooms[0]?.name
+      : isInviter
+      ? chats?.friend?.nickname
+      : chats?.inviter?.nickname;
 
     // Return
     return currCvsLoading === true || (currCvsLoading === false && cvs) ? (
@@ -561,7 +579,7 @@ const Chat: FC = () => {
             >
               <Flex align="center">
                 <DotsThree size={20} />
-              </Flex>
+              </Flex>g
             </Button>
           </Flex>
         </Flex>

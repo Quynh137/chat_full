@@ -21,7 +21,7 @@ const routes = (app) => {
   app.use("/messages",authenticateJWT, messagesRoute);
 
   // [ROUTE] /messages
-  app.use("/conversations",authenticateJWT, conversationsRoute);
+  app.use("/conversations", conversationsRoute);
 
   // [ROUTE] /messages
   app.use("/friends",authenticateJWT, friendsRoute);

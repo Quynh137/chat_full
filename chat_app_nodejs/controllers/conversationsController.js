@@ -35,7 +35,6 @@ class ConversationsController {
     try {
       // Call services
       const page = await conversationsServices.page(params);
-
       // Send Response
       res.status(200).json({
         data: page,

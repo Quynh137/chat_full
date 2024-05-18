@@ -25,7 +25,7 @@ class AuthServices {
 
       // Token
       const token = createToken(user._id);
-
+console.log(token);
       // Remove password
       const { password, lastname, firstname, ...data } = user._doc;
 
@@ -81,13 +81,13 @@ class AuthServices {
         };
       }
 
-      if (!validator.isStrongPassword(password)) {
-        //  Return
-        return {
-          status: 400,
-          message: "Password must be strong..",
-        };
-      }
+      // if (!validator.isStrongPassword(password)) {
+      //   //  Return
+      //   return {
+      //     status: 400,
+      //     message: "Password must be strong..",
+      //   };
+      // }
 
       //  Salt password
       const salt = await bcrypt.genSalt(10);

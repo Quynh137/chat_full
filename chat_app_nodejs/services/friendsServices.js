@@ -139,39 +139,34 @@ class FriendsServices {
   async search(params) {
     // Exception
     try {
-      // Exception
+      // Tạo một biến để lưu trữ các điều kiện tìm kiếm
+      const searchConditions = [];
+
+      // Tìm kiếm dựa trên một phần của tên của inviter hoặc friend
+      searchConditions.push({
+        $or: [
+          { "inviter.nickname": { $regex: params.search, $options: 'i' } }, // $regex: Tìm kiếm dựa trên một phần của tên, $options: 'i' để không phân biệt chữ hoa chữ thường
+          { "friend.nickname": { $regex: params.search, $options: 'i' } },
+        ],
+      });
+
+      // Thêm các điều kiện khác (state và block)
+      searchConditions.push({ state: "ACCEPTED" });
+      searchConditions.push({ block: false });
+
+      // Thực hiện truy vấn với các điều kiện tìm kiếm được tổng hợp
       const finded = await friendsModel
-        .find({
-          $and: [
-            {
-              $or: [
-                {
-                  $and: [
-                    { "inviter.nickname": params.search },
-                    { "friend.user": params.inviter },
-                  ],
-                },
-                {
-                  $and: [
-                    { "friend.nickname": params.search },
-                    { "inviter.user": params.inviter },
-                  ],
-                },
-              ],
-            },
-            { state: "ACCEPTED" },
-            { block: false },
-          ],
-        })
+        .find({ $and: searchConditions })
         .limit(params.limit);
 
-      // Return
+      // Trả về kết quả
       return finded;
     } catch (error) {
       // Throw http exception
       throw new Error(error.message);
     }
-  }
+}
+
 
   //hủy lời mời kết ban
   async cancel(params) {

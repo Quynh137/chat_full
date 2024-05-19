@@ -101,7 +101,6 @@ const ChatSide: React.FC<Props> = ({ cvsContext, token, user }: Props) => {
 
       // Check response and handle data
       if (res?.status === 200) cvsContext.list.set(res?.data);
-
       // Disable Loading
       setTimeout(() => {
         setCsvLoading(false);
@@ -110,7 +109,6 @@ const ChatSide: React.FC<Props> = ({ cvsContext, token, user }: Props) => {
 
     // Return clean
     return () => cvsContext.list.set([]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Return
@@ -140,7 +138,7 @@ const ChatSide: React.FC<Props> = ({ cvsContext, token, user }: Props) => {
               color: token.colorTextPlaceholder,
             }}
           >
-            20 tin nhắn, 3 chưa đọc
+            {/* 20 tin nhắn, 3 chưa đọc */}
           </Text>
         </Flex>
         <Popover

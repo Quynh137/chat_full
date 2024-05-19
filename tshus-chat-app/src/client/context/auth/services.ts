@@ -22,7 +22,7 @@ class AuthServices {
           if (res?.status === 200) {
                // Token
                const token = res?.data?.token;
-
+               console.log("token",token);
                // Save token
                setCookie('token', token.accessToken, token?.expiration);
 

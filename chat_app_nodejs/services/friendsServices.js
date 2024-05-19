@@ -178,7 +178,8 @@ async page(props) {
       // Throw http exception
       throw new Error(error.message);
     }
-  }
+}
+
 
   //hủy lời mời kết ban
   async cancel(params) {

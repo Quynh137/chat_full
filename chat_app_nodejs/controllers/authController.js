@@ -5,7 +5,6 @@ class AuthController {
   async login(req, res, next) {
     // Body Data
     const body = req.body;
-
     // Exception
     try {
       // Call services

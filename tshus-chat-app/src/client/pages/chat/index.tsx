@@ -322,7 +322,7 @@ const Chat: FC = () => {
   useEffect(() => {
     // Current conversation id
     const cvsId: string = cvsContext.current.get?._id;
-
+    
     // Caling
     cvsId &&
       (async () => {

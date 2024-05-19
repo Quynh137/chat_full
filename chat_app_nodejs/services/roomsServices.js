@@ -1,26 +1,24 @@
-const roomsModel= require("../models/roomsModel");
-const conversationsServices = require("./conversationsServices"); 
+const roomsModel = require("../models/roomsModel");
+const conversationsServices = require("./conversationsServices");
 const roomMembersService = require('./roomsMemberServices');
 
 class RoomsServices {
-  // Create Services
   async create(body) {
-    // Exception
     try {
       // Create conversation
       const cvs_created = await conversationsServices.create({ type: 'ROOMS' });
 
-      // Check conversation is created
+      // Check if conversation is created
       if (cvs_created) {
         // Create Room
         const created_room = await roomsModel.create({
           name: body.name,
           image: body.image,
           conversation: cvs_created._id,
-          members_count: body.members.length + 1,
+          members_count: body.members.length + 1, // Including the creator
         });
 
-        // Check created room
+        // Check if the room is created
         if (created_room) {
           // Add members
           const add_room_members = await roomMembersService.create(
@@ -34,10 +32,11 @@ class RoomsServices {
         }
       }
     } catch (error) {
-      // Throw Error
+      // Throw error
       throw new Error(error.message);
     }
   }
+
 }
 
 module.exports = new RoomsServices();

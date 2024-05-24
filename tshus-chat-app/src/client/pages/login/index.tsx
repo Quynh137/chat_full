@@ -1,4 +1,4 @@
-import React from 'react';
+import { useState } from 'react';
 import {
   App,
   Button,
@@ -14,6 +14,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/client/hooks/use-auth';
 import authServices from '@/client/context/auth/services';
 import { login } from '@/client/context/auth/reducers';
+import { RolesEnum } from '@/common/enum/roles.enum';
 
 // Use Token
 const { useToken } = theme;
@@ -35,7 +36,7 @@ export default function Login() {
   const { message } = App.useApp();
 
   // Loading state
-  const [loading, setLoading] = React.useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
 
   const onFinish = async (values: any) => {
     // Enable Loading
@@ -60,8 +61,14 @@ export default function Login() {
         // Set data
         auth.set(login({ ...loged?.user, isAuthenticated: true }));
 
-        // Check and rouing
-        navigate('/', { replace: true });
+        // Check roles
+        if (loged?.user?.roles?.[0] === RolesEnum.ADMIN) {
+          // Check and rouing
+          navigate('/admin/dashboard', { replace: true });
+        } else {
+          // Check and rouing
+          navigate('/', { replace: true });
+        }
       }, 300);
     } else {
       // Show message
@@ -149,6 +156,16 @@ export default function Login() {
                 required: true,
                 message: 'Vui lòng nhập mật khẩu!',
               },
+              {
+                min: 8,
+                message: 'Mật khẩu phải có ít nhất 8 ký tự!',
+              },
+              {
+                pattern:
+                  /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9]).{8,}$/,
+                message:
+                  'Mật khẩu phải bao gồm chữ số, số, chữ hoa, chữ thường, kí tự đặc biệt',
+              },
             ]}
           >
             <Input.Password
@@ -165,11 +182,10 @@ export default function Login() {
               style={{
                 float: 'right',
               }}
-              to="/auth/forgot"
+              to=""
             >
               Quên mật khẩu?
             </Link>
-
           </Form.Item>
           <Form.Item style={{ marginBottom: '0px' }}>
             <Button

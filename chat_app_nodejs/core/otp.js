@@ -38,8 +38,8 @@ class OTP {
         subject: "Verification Email",
         html: 
           `
-               <h1>Please confirm your OTP</h1>
-               <p>Here is your OTP code: ${otp}</p>
+            <h1>Xác thực Tshus Chat App OTP</h1>
+            <span>Mã OTP: <h3>${otp}</h3></span>
           `,
       });
 

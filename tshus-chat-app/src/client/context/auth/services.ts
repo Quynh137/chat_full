@@ -1,134 +1,79 @@
-import { User } from "@/common/interface/User";
-import { Response } from "@/common/types/response/response.type";
-import { setCookie } from "@/common/utils/cookie";
-import { fetcher } from "@/common/utils/fetcher";
+import { GenderEnum } from '@/common/enum/user/gender.enum';
+import { User } from '@/common/interface/User';
+import { Response } from '@/common/types/response/response.type';
+import { setCookie } from '@/common/utils/cookie';
+import { fetcher } from '@/common/utils/fetcher';
+
+type TokenType = {
+  accessToken: string;
+  expiration: string;
+};
 
 export type AuthDto = {
-     token: any;
-     user: User;
-}
+  token: TokenType;
+  user: User;
+};
+
+type LoginType = {
+  email: string;
+  password: string;
+};
+
+type RegisterType = {
+  firstname: string;
+  lastname: string;
+  email: string;
+  password: string;
+  confirm: string;
+  gender: GenderEnum;
+  avatar?: string;
+};
 
 class AuthServices {
-     // LOGIN
-     async login(payload: any): Promise<AuthDto | any> {
-          
-          // Response
-          const res: Response = await fetcher({
-               method: 'POST',
-               url: '/auth/login',
-               payload: payload
-          });
+  // LOGIN
+  async login(payload: LoginType): Promise<AuthDto | any> {
+    // Response
+    const res: Response = await fetcher({
+      method: 'POST',
+      url: '/auth/login',
+      payload: payload,
+    });
 
-          if (res?.status === 200) {
-               // Token
-               const token = res?.data?.token;
-               console.log("token",token);
-               // Save token
-               setCookie('token', token.accessToken, token?.expiration);
+    if (res?.status === 200) {
+      // Token
+      const token: TokenType = res?.data?.token;
 
-               // Save user
-               setCookie('user', res?.data?.user, token?.expiration);
+      // Save token
+      setCookie('token', token.accessToken, token.expiration);
 
-               // Return data
-               return Promise.resolve(res?.data);
-          }
-          
+      // Save user
+      setCookie('user', res?.data?.user, token.expiration);
 
-          // Return error
-          return Promise.resolve(false);
-     }
+      // Return data
+      return Promise.resolve(res?.data);
+    }
 
-     // LOGIN
-     async register(payload: any): Promise<boolean> {
-          
-          // Response
-          const res: Response = await fetcher({
-               method: 'POST',
-               url: '/auth/register',
-               payload: payload
-          });
+    // Return error
+    return Promise.resolve(false);
+  }
 
-          if (res?.status === 200) {
-               // Return data
-               return Promise.resolve(res?.status === 200);
-          }
-          
+  // LOGIN
+  async register(payload: RegisterType): Promise<boolean> {
+    // Response
+    const res: Response = await fetcher({
+      method: 'POST',
+      url: '/auth/register',
+      payload: payload,
+    });
 
-          // Return error
-          return Promise.resolve(false);
-     }
-     async sendResetPass(payload: any): Promise<boolean> {
-          
-          // Response
-          const res: Response = await fetcher({
-               method: 'POST',
-               url: '/auth/sendResetPass',
-               payload: payload
-          });
+    if (res?.status === 200) {
+      // Return data
+      return Promise.resolve(res?.status === 200);
+    }
 
-          if (res?.status === 200) {
-               // Return data
-               return Promise.resolve(res?.status === 200);
-          }
-          
-
-          // Return error
-          return Promise.resolve(false);
-     }
-     async sendOtp(payload: any): Promise<boolean> {
-          
-          // Response
-          const res: Response = await fetcher({
-               method: 'POST',
-               url: '/auth/sendOtp',
-               payload: payload
-          });
-
-          if (res?.status === 200) {
-               // Return data
-               return Promise.resolve(res?.status === 200);
-          }
-          
-
-          // Return error
-          return Promise.resolve(false);
-     }
-     async verifyOTP(payload: any): Promise<boolean> {
-          
-          // Response
-          const res: Response = await fetcher({
-               method: 'POST',
-               url: '/auth/verifyOTP',
-               payload: payload
-          });
-
-          if (res?.status === 200) {
-               // Return data
-               return Promise.resolve(res?.status === 200);
-          }
-          
-
-          // Return error
-          return Promise.resolve(false);
-     }
-     async updatePassword(payload: any): Promise<boolean> {
-          
-          // Response
-          const res: Response = await fetcher({
-               method: 'POST',
-               url: '/auth/updatePassword',
-               payload: payload
-          });
-
-          if (res?.status === 200) {
-               // Return data
-               return Promise.resolve(res?.status === 200);
-          }
-          
-
-          // Return error
-          return Promise.resolve(false);
-     }
+    // Return error
+    return Promise.reject(res?.message);
+  }
 }
 
 // eslint-disable-next-line import/no-anonymous-default-export

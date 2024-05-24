@@ -11,8 +11,8 @@ const UsersSchema = new mongoose.Schema(
   {
     email: { type: String, required: true, trim: true },
     password: { type: String, required: true, minlength: 3, maxlength: 1024 },
-    firstname: { type: String, required: true, maxlength: 50 },
-    lastname: { type: String, required: true, maxlength: 50 },
+    firstname: { type: String, required: true, maxlength: 255 },
+    lastname: { type: String, required: true, maxlength: 255 },
     active: { type: Boolean, default: true },
     phone: { type: String, required: true, minlength: 10, maxlength: 10 },
     gender: {
@@ -23,18 +23,9 @@ const UsersSchema = new mongoose.Schema(
     roles: { type: [String], enum: ["USER", "ADMIN"], default: ["USER"] },
     avatar: { type: String, default: "" },
     online: { type: OnlineType },
-    forward: {
-      type: Boolean,
-      default: false
-  },
-    reply: {
-    type: String,
-    default: ''
-},
-  },
-  {
-    timestamps: true,
-  },
+    created_at: { type: Date, default: Date.now },
+    updated_at: { type: Date, default: Date.now },
+  }
 );
 
 // User Model

@@ -10,9 +10,8 @@ const ConversationsSchema = new mongoose.Schema(
     },
     last_message: { type: String, default: "" },
     last_send: { type: Date, default: Date.now() },
-  },
-  {
-    timestamps: true,
+    created_at: { type: Date, default: Date.now },
+    updated_at: { type: Date, default: Date.now },
   },
 );
 

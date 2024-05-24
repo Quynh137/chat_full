@@ -1,11 +1,11 @@
 import { Layout, theme } from 'antd';
-import React from 'react';
+import { FC } from 'react';
 import { Outlet } from 'react-router-dom';
 
 // Use Token
 const { useToken } = theme;
 
-const Base: React.FC = () => {
+const Base: FC = () => {
   // Toeken
   const { token } = useToken();
 

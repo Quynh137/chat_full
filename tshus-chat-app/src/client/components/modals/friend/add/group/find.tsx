@@ -1,5 +1,7 @@
-import React, {
+import {
   Dispatch,
+  FC,
+  ReactNode,
   SetStateAction,
   useMemo,
   useRef,
@@ -40,7 +42,7 @@ export interface DebounceSelectProps<ValueType = any>
 function DebounceSelect<
   ValueType extends {
     key?: string;
-    label: React.ReactNode;
+    label: ReactNode;
     value: string | number;
     title: string;
   } = any,
@@ -125,11 +127,8 @@ async function fetchUserList(user: User, search: string): Promise<UserValue[]> {
 
   // Return
   return res?.data?.map((data: Friends) => {
-
     // Is Inviter
     const isInviter = data?.inviter?.user === user?._id;
-
-    console.log(isInviter)
 
     // Result
     const result = isInviter ? data.friend : data.inviter;
@@ -152,9 +151,7 @@ type FindAndSelectFriendProps = {
   changeOpen: Dispatch<SetStateAction<boolean>>;
 };
 
-const FindAndSelectFriend: React.FC<FindAndSelectFriendProps> = ({
-  changeOpen,
-}) => {
+const FindAndSelectFriend: FC<FindAndSelectFriendProps> = ({ changeOpen }) => {
   // Value state
   const [value, setValue] = useState<UserValue[]>([]);
 

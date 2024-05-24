@@ -5,11 +5,12 @@ class AuthController {
   async login(req, res, next) {
     // Body Data
     const body = req.body;
+
     // Exception
     try {
       // Call services
       const loged = await authServices.login(body);
-
+      console.log(loged);
       // Send Response
       res.status(200).json({
         data: loged,
@@ -26,12 +27,22 @@ class AuthController {
       }) && next(error);
     }
   }
-  async verifyOTP(req, res) {
+  
+  async verifyOTP(req, res, next) {
+    // Exception
     try {
-      const { email, otp } = req.body;
+      // Get OTP
+      await authServices.verifyOTP(req.body);
   
+<<<<<<< HEAD
+      // Send
+      res.status(200).json({ message: 'Xác thực OTP thành công' });
+
+      // Next
+      next();
+=======
       const isOTPValid = await authServices.verifyOTP(email, otp);
-  
+      
       if (!isOTPValid) {
         return res.status(400).json({ message: 'Invalid OTP' });
       }
@@ -40,6 +51,7 @@ class AuthController {
         data: isOTPValid,
         status: 200,
        });
+>>>>>>> ad4e62adbe339590df7032be9c3bc91d913e8f1f
     } catch (error) {
       res.status(500).json({
         message: error.message,
@@ -71,49 +83,21 @@ class AuthController {
     }
   }
   async sendOtp(req, res, next) {
+    // Exception
     try {
-      const { email } = req.body;
+      // OTP
+      await authServices.sendOtp(req.body);
   
-      const otp = await authServices.sendOtp(email);
-  
-      res.status(200).json({
-        success: true,
-        message: 'OTP Sent Successfully',
-        otp,
-      });
+      // Send
+      res.status(200).json({ message: 'Tạo mã OTP thành công, vui lòng kiểm tra Email' });
+
+      // Next
+      next();
     } catch (error) {
       res.status(500).json({
         message: error.message,
         status: 500,
       }) && next(error);    }
-  };
-   async sendResetPass(req, res) {
-    try {
-      const { email } = req.body;
-  
-      const otp = await authServices.sendResetPass(email);
-  
-      res.status(200).json({
-        success: true,
-        message: 'OTP Sent Successfully',
-        otp,
-      });
-    } catch (error) {
-      res.status(500).json({
-        message: error.message,
-        status: 500,
-      }) && next(error);    }
-  };
-  
-  async updatePassword(req, res) {
-    const { email, password } = req.body;
-    
-    try {
-      const result = await authServices.updatePassword(email, password);
-      res.status(200).json(result);
-    } catch (error) {
-      res.status(400).json({ success: false, message: error.message });
-    }
   };
 }
 

@@ -7,7 +7,7 @@ const GuestGuard: FC = () => {
 
   if (!isInitialized) return null;
 
-  if (isAuthenticated) return <Navigate to="/" replace />
+  if (isAuthenticated) return <Navigate to="/chats/messages" replace />
 
   return <Outlet/>;
 };

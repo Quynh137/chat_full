@@ -2,6 +2,8 @@ import { useAuth } from '@/client/hooks/use-auth';
 import { ThemeEnum } from '@/common/enum/theme.enum';
 import { useConfig } from '@/common/hooks/use-config';
 import { Roommembers } from '@/common/interface/Roommembers';
+import { ConfigType } from '@/common/types/other/config.type';
+import { HookType } from '@/common/types/other/hook.type';
 import { Response } from '@/common/types/response/response.type';
 import { fetcher } from '@/common/utils/fetcher';
 import { TrashSimple } from '@phosphor-icons/react';
@@ -31,7 +33,16 @@ const DeleteMemberFromGroupModal: FC<Props> = ({ roommembers }: Props) => {
   // Open State
   const [open, setOpen] = useState(false);
 
-  const showModal = () => setOpen(true);
+  const showModal = () => {
+    // Check
+    if (roommembers?.length > 1) {
+      // Set open
+      setOpen(true);
+    } else {
+      // Show error
+      message.error('Không có thành viên nào trong nhóm');
+    }
+  };
 
   // Message
   const { message } = App.useApp();
@@ -45,7 +56,7 @@ const DeleteMemberFromGroupModal: FC<Props> = ({ roommembers }: Props) => {
   const handleOk = () => setOpen(false);
 
   // Config
-  const config: any = useConfig();
+  const config: HookType<ConfigType> = useConfig();
 
   // Auth
   const auth = useAuth();
@@ -72,7 +83,7 @@ const DeleteMemberFromGroupModal: FC<Props> = ({ roommembers }: Props) => {
       //  Check response status
       if (res?.status === 200) {
         //  Close modal
-        setOpen(false);
+        handleCancel();
 
         // Show message success
         message.success('Xoá thành viên thành công');
@@ -87,11 +98,7 @@ const DeleteMemberFromGroupModal: FC<Props> = ({ roommembers }: Props) => {
   return (
     <>
       <Tooltip title="Xoá thành viên">
-        <Button
-          type="text"
-          icon={<TrashSimple size={20} />}
-          onClick={showModal}
-        />
+        <Button icon={<TrashSimple size={20} />} onClick={showModal} />
       </Tooltip>
       <Modal
         title="Xoá thành viên khỏi nhóm chat"
@@ -103,56 +110,65 @@ const DeleteMemberFromGroupModal: FC<Props> = ({ roommembers }: Props) => {
         <Flex style={{ paddingTop: 10 }} vertical gap={15}>
           <Radio.Group style={{ width: '100%' }} value={deleteMember}>
             <Flex vertical>
-              {roommembers?.map((item) => (
-                <Flex
-                  key={item._id}
-                  justify="space-between"
-                  style={{ borderRadius: 5 }}
-                  className={`${
-                    config.get.theme === ThemeEnum.DARK
-                      ? 'cvs-d-hover'
-                      : 'cvs-l-hover'
-                  } ${
-                    item._id === deleteMember &&
-                    ` ${
-                      config.get.theme === ThemeEnum.DARK
-                        ? 'cvs-d-active'
-                        : 'cvs-l-active'
-                    }`
-                  }`}
-                >
-                  <Flex
-                    gap={15}
-                    align="center"
-                    style={{ padding: 10, cursor: 'pointer', width: '100%' }}
-                    onClick={() => setDeleteMember(item._id)}
-                  >
-                    <Badge
-                      dot
-                      style={{
-                        padding: 3.5,
-                        background: token.colorSuccess,
-                      }}
-                      status="processing"
-                      offset={[-1, '100%']}
+              {roommembers?.map(
+                (item) =>
+                  auth?.get?._id !== item?.user && (
+                    <Flex
+                      key={item._id}
+                      justify="space-between"
+                      style={{ borderRadius: 5 }}
+                      className={`${
+                        config.get.theme === ThemeEnum.DARK
+                          ? 'cvs-d-hover'
+                          : 'cvs-l-hover'
+                      } ${
+                        item._id === deleteMember &&
+                        ` ${
+                          config.get.theme === ThemeEnum.DARK
+                            ? 'cvs-d-active'
+                            : 'cvs-l-active'
+                        }`
+                      }`}
                     >
-                      <Avatar shape="square" size={35}>
-                        {item.nickname?.charAt(0)}
-                      </Avatar>
-                    </Badge>
-                    <Flex gap={1} vertical justify="space-between">
-                      <Text style={{ fontSize: 13 }}>{item.nickname}</Text>
+                      <Flex
+                        gap={15}
+                        align="center"
+                        style={{
+                          padding: 10,
+                          cursor: 'pointer',
+                          width: '100%',
+                        }}
+                        onClick={() => setDeleteMember(item._id)}
+                      >
+                        <Badge
+                          dot
+                          style={{
+                            padding: 3.5,
+                            background: token.colorSuccess,
+                          }}
+                          status="processing"
+                          offset={[-1, '100%']}
+                        >
+                          <Avatar shape="square" size={35}>
+                            {item.nickname?.charAt(0)}
+                          </Avatar>
+                        </Badge>
+                        <Flex gap={1} vertical justify="space-between">
+                          <Text style={{ fontSize: 13 }}>{item.nickname}</Text>
+                        </Flex>
+                      </Flex>
+                      <Flex>
+                        <Radio value={item?._id} />
+                      </Flex>
                     </Flex>
-                  </Flex>
-                  <Flex>
-                    <Radio value={item?._id} />
-                  </Flex>
-                </Flex>
-              ))}
+                  ),
+              )}
             </Flex>
           </Radio.Group>
           <Flex justify="end">
-            <Button danger onClick={onSubmit}>Xoá thành viên</Button>
+            <Button danger onClick={onSubmit}>
+              Xoá thành viên
+            </Button>
           </Flex>
         </Flex>
       </Modal>

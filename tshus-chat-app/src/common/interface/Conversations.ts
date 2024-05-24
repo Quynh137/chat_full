@@ -5,5 +5,6 @@ export interface Conversations {
   rooms?: any;
   last_send: Date;
   last_message: string;
-  createdAt: Date;
+  created_at: Date;
+  updated_at: Date;
 }

@@ -1,4 +1,4 @@
 export enum RoommembersEnum {
-    MEMBER = 'MEMBER',
-    MANAGER = 'MANAGER',
+     MEMBER = 'MEMBER',
+     MANAGER = 'MANAGER',
 }

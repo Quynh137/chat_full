@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 // Chater Type
 const ChaterType = mongoose.Schema({
-  nickname: { type: String, required: true, maxlength: 255, index: 'text'},
+  nickname: { type: String, required: true, maxlength: 255, index: "text" },
   user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   image: { type: String, default: "" },
 });
@@ -17,28 +17,23 @@ const MessagesSchema = new mongoose.Schema(
     files: { type: Array },
     type: {
       type: String,
-      enum: ["TEXT", "FILES", 'VOICE'],
+      enum: ["TEXT", "FILES", "VOICE"],
       require: true,
     },
-    state:{
+    state: {
       type: String,
       enum: ["REVEIVER", "BOTH", "NONE"],
       default: "BOTH",
       require: true,
     },
-    messages: { type: String, require: true},
+    messages: { type: String, require: true },
     seen_at: { type: Date, default: Date.now },
     send_at: { type: Date, default: Date.now },
     seenders: { type: [ChaterType], default: [] },
     sender: { type: ChaterType, require: true },
-    reply: {
-      type: String,
-      default: ''
-  },
-  },
-  {
-    timestamps: true,
-  },
+    created_at: { type: Date, default: Date.now },
+    updated_at: { type: Date, default: Date.now },
+  }
 );
 
 // Message Model

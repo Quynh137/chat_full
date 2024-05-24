@@ -16,10 +16,9 @@ const ChatsSchema = new mongoose.Schema(
     },
     inviter: { type: ChaterType },
     friend: { type: ChaterType },
-  },
-  {
-    timestamps: true,
-  },
+    created_at: { type: Date, default: Date.now },
+    updated_at: { type: Date, default: Date.now },
+  }
 );
 
 // Chats Model

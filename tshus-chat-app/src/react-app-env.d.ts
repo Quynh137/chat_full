@@ -16,3 +16,6 @@ declare module 'jsonwebtoken';
 
 // Declare module lodash
 declare module 'lodash';
+
+// Delare module simple-peer
+declare module 'simple-peer';

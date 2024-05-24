@@ -1,11 +1,9 @@
 const { createToken } = require("../core/token");
 const usersModel = require("../models/usersModel");
-const otpModel = require("../models/otpModel");
-
 const bcrypt = require("bcrypt");
 const OTP = require("../core/otp");
 const validator = require("validator");
-var cache = require('memory-cache');
+const cache = require("memory-cache");
 
 class AuthServices {
   // Login
@@ -25,7 +23,10 @@ class AuthServices {
 
       // Token
       const token = createToken(user._id);
-console.log(token);
+<<<<<<< HEAD
+
+=======
+>>>>>>> ad4e62adbe339590df7032be9c3bc91d913e8f1f
       // Remove password
       const { password, lastname, firstname, ...data } = user._doc;
 
@@ -46,10 +47,10 @@ console.log(token);
   async register(props) {
     // Exception
     try {
-      const { email, otp, phone, password, firstname, lastname, gender} = props;
+      const { email, phone, password, firstname, lastname, gender } = props;
 
       const user = await usersModel.findOne({ email });
-    
+
       //  Check user is valid
       if (user)
         //  Return
@@ -62,7 +63,7 @@ console.log(token);
         //  Return
         return {
           status: 400,
-          message: "All fields are required.",
+          message: "Vui lòng nhập đầy đủ các trường.",
         };
       }
 
@@ -70,24 +71,16 @@ console.log(token);
         //  Return
         return {
           status: 400,
-          message: "Email is invalid.",
+          message: "Email không đúng định dạng.",
         };
       }
       if (!validator.isMobilePhone(phone, "any", { strictMode: false })) {
         //  Return
         return {
           status: 400,
-          message: "Phone must be a valid number excluding country code..",
+          message: "Số điện thoại không đúng định dạng",
         };
       }
-
-      // if (!validator.isStrongPassword(password)) {
-      //   //  Return
-      //   return {
-      //     status: 400,
-      //     message: "Password must be strong..",
-      //   };
-      // }
 
       //  Salt password
       const salt = await bcrypt.genSalt(10);
@@ -103,108 +96,84 @@ console.log(token);
         lastname,
         password: hashPassword,
         roles: ["USER"],
-        gender: gender || usersModel.schema.paths.gender.defaultValue,
-        // mail_otp: otp,
+        gender: gender,
         online: { state: "OFFLINE", time: Date.now() },
       });
 
+      // Save to database
       await created.save();
+
+      // Delete otp from cache
+      cache.del(email);
 
       // Return
       return {
         status: 200,
-        message: "Register successfully.",
+        message: "Đăng ký thành công.",
       };
     } catch (error) {
       // Throw error
       throw new Error(error.message);
     }
   }
- 
-  async sendOtp(email) {
+
+  async sendOtp(body) {
+    // Exception
     try {
-       if (!validator.isEmail(email)) {
-        //  Return
-        return {
-          status: 400,
-          message: "Email is invalid.",
-        };
-      }
-      // Tạo mã OTP
+      // Find user
+      const find = await usersModel.findOne({ email: body.email });
+
+      // If user is exist
+      if (find) throw new Error("Tài khoản đã được đăng ký");
+
+      // Create Email OTP
       const otp = await OTP.generateOTP();
-      // Lưu mã OTP vào trường `otp` của người dùng
-      const created = new otpModel({
-        email,
-        otp,
-      });
 
-      await created.save();
+      // Push OTP to cache
+      cache.put(body.email, JSON.stringify({ otp, verify: false }), 1 * 1000 * 60);
 
-      // Gửi mã OTP đến email của người dùng
-      await OTP.mailSender(email, otp, 600000);
+      // Sender to email
+      await OTP.mailSender(body.email, otp);
+
+      // Return
       return otp;
     } catch (error) {
-      throw error;
+      // Throw error
+      throw Error(error.message);
     }
   }
 
-async verifyOTP(email, otp) {
-  try {
-    // Tìm người dùng có email tương ứng
-    const user = await otpModel.findOne({ email });
-    // Kiểm tra xem OTP của người dùng có trùng khớp không
-    if (!user || otp !== user.otp) {
-      throw new Error('OTP không hợp lệ.');
+  async verifyOTP(params) {
+    // Exception
+    try {
+      // Get cache otp
+      const JSON_OTP = await cache.get(params.email);
+      
+      // Check OTP is exist
+      if (JSON_OTP) {
+        // OTP
+        const { otp } = JSON.parse(JSON_OTP);
+
+        // Check match otp
+        if (otp !== params.otp)
+          throw new Error("OTP không trùng khớp, vui lòng thử lại");
+
+        // Change verify to true
+        cache.put(params.email, JSON.stringify({ otp, verify: true }), 60 * 1000 * 60);
+
+        // Return
+        return otp;
+      }
+
+      // Throw error
+      throw new Error("OTP chưa được tạo hoặc đã hết hạn");
+
+      // Return
+    } catch (error) {
+      // Throw error
+      throw new Error(error.message);
     }
-    return true;
-  } catch (error) {
-    throw error;
   }
-}
-
-
-async sendResetPass(email) {
-  try {
-    if (!email) {
-      throw new Error('Không tìm thấy email');
-    }
-   // // Create Email OTP
-   const otp = await OTP.generateOTP();
-
-   const created = new otpModel({
-    email,
-    otp,
-  });
-  await created.save();
-
-   // // Call mail sender
-   await OTP.mailSender(email, otp, 300000);
-
-    return otp;
-  } catch (error) {
-    throw error;
-  }
-}
-
-async updatePassword(email, password) {
-  if (!email || !password) {
-    throw new Error("Email hoặc mật khẩu mới không được để trống");
-  }
-  const user = await usersModel.findOne({ email });
-  if (!user) {
-    throw new Error("Người dùng không tồn tại");
-  }
-  const salt = await bcrypt.genSalt(10);
-  const hashedPassword = await bcrypt.hash(password, salt);
-
-  // Cập nhật mật khẩu
-  user.password = hashedPassword;
-
-  // Lưu thay đổi vào cơ sở dữ liệu
-  await user.save();
-  return { success: true, message: "Mật khẩu đã được cập nhật thành công" };
-}
-
 }
 
 module.exports = new AuthServices();

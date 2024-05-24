@@ -1,42 +1,27 @@
-import { FC, MouseEvent, useState } from 'react';
-import { Button, Cascader, Flex, Form, Modal, Spin, Typography } from 'antd';
+import { FC, useState } from 'react';
+import {
+  Button,
+  Flex,
+  Form,
+  Input,
+  Modal,
+  Spin,
+  Typography,
+} from 'antd';
 import { UserPlus } from '@phosphor-icons/react';
-import Search from 'antd/es/input/Search';
 import { fetcher } from '@/common/utils/fetcher';
 import UserFinded from '@/client/components/modals/friend/add/private/find';
 import { LoadingOutlined } from '@ant-design/icons';
 import { useAuth } from '@/client/hooks/use-auth';
-import { verifyEmail, verifyPhone } from '@/common/utils/form-rules';
+import { Response } from '@/common/types/response/response.type';
 import EmptyHorizontal from '@/client/components/empty/horizontal.empty';
 import { UserHasFriend } from '@/common/types/user/user-has-friend.type';
 import { HookType } from '@/common/types/other/hook.type';
 import { User } from '@/common/interface/User';
-import { Response } from '@/common/types/response/response.type';
-
-interface Option {
-  value: string | number;
-  label: string;
-  children?: Option[];
-}
-
-// Search Options
-const options: Option[] = [
-  {
-    value: 'EMAIL',
-    label: 'Email',
-  },
-  {
-    value: 'PHONE',
-    label: 'Phone',
-  },
-];
 
 type OnSingleChange = any;
 
 const AddFriendsModal: FC = () => {
-  // Search Input State
-  const [searchInput, setSearchInput] = useState('');
-
   // List user state
   const [userFind, setUserFind] = useState<UserHasFriend | null>(null);
 
@@ -49,38 +34,22 @@ const AddFriendsModal: FC = () => {
   // Search loading state
   const [searchLoading, setSearchLoading] = useState(false);
 
-  // Search type state
-  const [searchType, setSearchType] = useState<string>('EMAIL');
-
-  const handleSetSearchType: OnSingleChange = (value: string[]) =>
-    setSearchType(value[0]);
-
-  // Handle set search input
-  const handleSearchInput: OnSingleChange = (value: string) =>
-    setSearchInput(value);
-
   const showModal: OnSingleChange = () => setOpen(true);
 
   const handleOk: OnSingleChange = () => setOpen(false);
 
   const handleCancel = () => {
-    // Clear search input
-    setSearchInput('');
-
     // Clear user list
     setUserFind(null);
 
     // Set open
     setOpen(false);
-
-    // Set search type
-    setSearchType('EMAIL');
   };
 
   // Search
-  const onSearch = async (value: string) => {
+  const onSearch = async (values: { search: string }) => {
     // Check find value
-    if (value !== '') {
+    if (values.search !== '') {
       // Enable loading
       setSearchLoading(true);
 
@@ -89,9 +58,8 @@ const AddFriendsModal: FC = () => {
         method: 'GET',
         url: '/users/find',
         payload: {
-          search: value,
+          search: values.search,
           user: user.get?._id,
-          type: searchType,
         },
       });
 
@@ -122,36 +90,36 @@ const AddFriendsModal: FC = () => {
         ]}
       >
         <div style={{ paddingTop: 10 }}>
-          <Form name="search_user" layout="vertical" requiredMark="optional">
-            <Form.Item
-              hasFeedback
-              style={{ marginBottom: '30px' }}
-              rules={[
-                {
-                  validator: searchType === 'PHONE' ? verifyPhone : verifyEmail,
-                },
-              ]}
-            >
-              <Search
-                value={searchInput}
-                loading={searchLoading}
-                onChange={(e) => handleSearchInput(e.target.value)}
-                addonBefore={
-                  <Cascader
-                    options={options}
-                    allowClear={false}
-                    placeholder="Chọn..."
-                    value={[searchType]}
-                    style={{ width: 90 }}
-                    onChange={handleSetSearchType}
-                  />
-                }
-                onSearch={onSearch}
-                placeholder="Nhập số điện thoại hoặc email"
-              />
-            </Form.Item>
+          <Form
+            name="search_user"
+            layout="vertical"
+            requiredMark="optional"
+            onFinish={onSearch}
+          >
+            <Flex gap={2}>
+              <Form.Item
+                name="search"
+                hasFeedback
+                style={{ width: '100%' }}
+                rules={[
+                  {
+                    required: true,
+                    message: 'Vui lòng nhập nội dung tìm kiếm!',
+                  },
+                  {
+                    type: 'email',
+                    message: 'Vui lòng nhập Email cần tìm kiếm!',
+                  },
+                ]}
+              >
+                <Input placeholder="Nhập số điện thoại hoặc email" />
+              </Form.Item>
+              <Button type="primary" htmlType="submit">
+                Tìm kiếm
+              </Button>
+            </Flex>
           </Form>
-          <Flex vertical style={{ marginTop: 20 }}>
+          <Flex vertical>
             <Typography.Text>Kết quả tìm kiếm</Typography.Text>
             <Flex
               justify="center"

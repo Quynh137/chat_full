@@ -1,7 +1,9 @@
-import { createContext, Dispatch, useEffect, useReducer } from 'react';
+import { createContext, Dispatch, FC, ReactNode, useEffect, useReducer } from 'react';
 import { getCookie } from '@/common/utils/cookie';
 import { AuthState } from '@/common/types/auth/auth-state.type';
 import { initialize, reducer } from './reducers';
+import { useSocket } from '@/common/hooks/use-socket';
+import { TshusSocket } from '@/common/types/other/socket.type';
 
 export enum AuthActionType {
   INITIALZE = 'INITIALIZE',
@@ -29,12 +31,15 @@ export const AuthContext = createContext<AuthContextType>({
 });
 
 interface Props {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
-const AuthProvider: React.FC<Props> = ({ children }: Props) => {
+const AuthProvider: FC<Props> = ({ children }: Props) => {
   // State
   const [state, dispatch] = useReducer(reducer, initialState);
+
+  // Socket
+  const socket: TshusSocket = useSocket();
 
   // Use Effect
   useEffect(() => {
@@ -47,15 +52,35 @@ const AuthProvider: React.FC<Props> = ({ children }: Props) => {
         return dispatch(initialize({ isAuthenticated: false }));
       }
 
-      // User
       try {
+        // User
         const user = getCookie('user');
-        dispatch(initialize({ isAuthenticated: true, ...user })); 
+        dispatch(initialize({ isAuthenticated: true, ...user }));
       } catch (error) {
         dispatch(initialize({ isAuthenticated: false }));
       }
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    (async () => {
+      // User
+      const user = getCookie('user');
+
+      // Check
+      if (socket && user) {
+        // Set id to socket
+        socket.auth = {
+          user: user?._id,
+        };
+        socket?.connect();
+      }
+
+      // Return 
+      return () => socket?.disconnect();
+    })();
+  }, [socket, state]);
 
   // Shared
   const shared: any = {

@@ -1,12 +1,14 @@
 import { Button, Space } from 'antd';
+import { NotificationInstance } from 'antd/es/notification/interface';
+import { FC } from 'react';
 
 type Props = {
-  notify: any;
+  notify: NotificationInstance;
   title: string;
   id?: string;
 };
 
-const NotifyBox: React.FC<Props> = ({ notify, title, id }: Props) => {
+const NotifyBox: FC<Props> = ({ notify, title, id }: Props) => {
   // Return
   return (
     <Space>

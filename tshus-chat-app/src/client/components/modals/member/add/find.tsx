@@ -11,7 +11,6 @@ import {
   Button,
   Flex,
   Form,
-  Input,
   Select,
   Space,
   Spin,
@@ -24,7 +23,6 @@ import { User } from '@/common/interface/User';
 import { Response } from '@/common/types/response/response.type';
 import { useAuth } from '@/client/hooks/use-auth';
 import { useConversations } from '@/client/hooks/user-conversations';
-import { RoomRoleEnum } from '@/common/enum/room-role.enum';
 import { AuthHookType, SpecialHookType } from '@/common/types/other/hook.type';
 import { Friends } from '@/common/interface/Friends';
 import { Conversations } from '@/common/interface/Conversations';
@@ -128,8 +126,6 @@ async function fetchUserList(user: User, search: string): Promise<UserValue[]> {
     // Is Inviter
     const isInviter = data?.inviter?.user === user?._id;
 
-    console.log(isInviter);
-
     // Result
     const result = isInviter ? data.friend : data.inviter;
 
@@ -213,7 +209,7 @@ const FindAndSelectMember: React.FC<FindAndSelectMemberProps> = ({
           rules={[
             {
               required: true,
-              message: 'Vui lòng chọn ít nhất 2 thành viên để thêm vào nhóm',
+              message: 'Vui lòng chọn ít nhất 1 thành viên để thêm vào nhóm',
             },
           ]}
         >

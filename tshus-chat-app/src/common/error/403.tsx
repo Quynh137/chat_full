@@ -1,7 +1,7 @@
-import React from 'react';
+import { FC } from 'react';
 import { Button, Result } from 'antd';
 
-const Page403: React.FC = () => (
+const Page403: FC = () => (
   <Result
     status="403"
     title="403"

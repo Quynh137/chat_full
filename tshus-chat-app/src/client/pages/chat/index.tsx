@@ -15,6 +15,7 @@ import {
   Drawer,
   Divider,
   Collapse,
+  App,
 } from 'antd';
 import TextArea from 'antd/es/input/TextArea';
 import {
@@ -24,7 +25,8 @@ import {
   Link,
   Microphone,
   PaperPlaneRight,
-  User,
+  Phone,
+  User as UserIcon,
   WechatLogo,
 } from '@phosphor-icons/react';
 import EmojiPick from '@/client/components/emoji';
@@ -38,7 +40,6 @@ import ChatUploadImage from './components/chat-upload/upload-image';
 import { MessageType } from '@/common/enum/message-type';
 import { Response } from '@/common/types/response/response.type';
 import { BASE_URL, fetcher } from '@/common/utils/fetcher';
-import { Socket } from 'socket.io-client';
 import ChatContent from './components/chat-layout/content';
 import EmptyVertical from '@/client/components/empty/vertical.empty';
 import { Messages } from '@/common/interface/Messages';
@@ -46,6 +47,7 @@ import {
   FC,
   FormEvent,
   Fragment,
+  memo,
   RefObject,
   useEffect,
   useRef,
@@ -59,6 +61,19 @@ import { useConfig } from '@/common/hooks/use-config';
 import AddMemberToGroupModal from '@/client/components/modals/member/add';
 import DeleteMemberFromGroupModal from '@/client/components/modals/member/delete';
 import { Roommembers } from '@/common/interface/Roommembers';
+import { ConversationType } from '@/common/types/conversation/cvs.type';
+import { AuthHookType, HookType } from '@/common/types/other/hook.type';
+import { User } from '@/common/interface/User';
+import { ConfigType } from '@/common/types/other/config.type';
+import { ChaterType } from '@/common/types/user/chater.type';
+import { Rooms } from '@/common/interface/Rooms';
+import { useCall } from '@/common/hooks/use-call';
+import { SocketProps, TshusSocket } from '@/common/types/other/socket.type';
+import { useOnline } from '@/common/hooks/use-online';
+import { isOnline } from '@/common/utils/ultils';
+import { RoommembersEnum } from '@/common/enum/roommember-role.enum';
+import { MesssageState } from '@/common/enum/message-state.enum';
+import { MesssageActionEnum } from '@/common/enum/user/message-actions.enum';
 
 const { Text } = Typography;
 
@@ -76,14 +91,73 @@ const ChatWrapper: FC = () => {
 // Use Token
 const { useToken } = theme;
 
+type ContentViewHeadProps = {
+  isRoom: boolean;
+  data: any;
+  onlines: any;
+};
+
+// Contenview Header
+const ContentViewHead: FC<ContentViewHeadProps> = memo(
+  ({ data, isRoom, onlines }: ContentViewHeadProps) => {
+    // Return
+    return (
+      <Flex align="center" gap={15} vertical>
+        <Avatar
+          shape="square"
+          style={{ width: '100%', height: 200, fontSize: 50 }}
+          alt={
+            isRoom
+              ? (data as Rooms)?.name?.charAt(0)
+              : (data as ChaterType)?.nickname?.charAt(0)
+          }
+          src={
+            isRoom
+              ? `${BASE_URL}/${(data as Rooms)?.image}`
+              : `${BASE_URL}/${(data as ChaterType)?.avatar}`
+          }
+        >
+          {isRoom
+            ? (data as Rooms)?.name?.charAt(0)
+            : (data as ChaterType)?.nickname?.charAt(0)}
+        </Avatar>
+        <Flex gap={1} vertical align="center">
+          <Text style={{ fontSize: 23 }}>
+            {isRoom ? (data as Rooms)?.name : (data as ChaterType)?.nickname}
+          </Text>
+          <Flex align="center" gap={5}>
+            {isOnline(onlines, isRoom, data) ? (
+              <Fragment>
+                <Badge dot status="success" />
+                <Text type="secondary" style={{ fontSize: 13 }}>
+                  Đang hoạt động
+                </Text>
+              </Fragment>
+            ) : (
+              <Fragment>
+                <Text type="secondary" style={{ fontSize: 13 }}>
+                  Hiện đang ngoại tuyến
+                </Text>
+              </Fragment>
+            )}
+          </Flex>
+        </Flex>
+      </Flex>
+    );
+  },
+);
+
 const Chat: FC = () => {
   // Toeken
   const { token } = useToken();
 
-  const delay = 300;
+  // call
+  const call = useCall();
+
+  const delay: number = 300;
 
   // Message State
-  const [message, setMessage] = useState<string>('');
+  const [inputMessage, setInputMessage] = useState<string>('');
 
   // Roommembers State
   const [roommembers, setRoommembers] = useState<Roommembers[] | []>([]);
@@ -92,6 +166,12 @@ const Chat: FC = () => {
   const [messages, setMessages] = useState<Messages[]>([]);
 
   const [currCvsLoading, setCurrCsvLoading] = useState<boolean>(true);
+
+  // Use message app
+  const { message } = App.useApp();
+
+  // Onlines
+  const onlines: SocketProps[] = useOnline();
 
   // File list
   const [fileList, setFileList] = useState<UploadFile[]>([]);
@@ -103,7 +183,13 @@ const Chat: FC = () => {
   const [open, setOpen] = useState<boolean>(false);
 
   // Config
-  const config = useConfig();
+  const config: HookType<ConfigType> = useConfig();
+
+  // Calling handle
+  const callingHandle = (to: string) => {
+    setOpen(false);
+    call?.calling(to);
+  };
 
   const showDrawer = () => {
     setOpen(true);
@@ -122,20 +208,20 @@ const Chat: FC = () => {
     useRef<HTMLButtonElement>(null);
 
   // Socket
-  const socket: Socket = useSocket();
+  const socket: TshusSocket = useSocket();
 
   // Conversations
-  const cvsContext: any = useConversations();
+  const cvsContext: ConversationType = useConversations();
 
   // User
-  const user: any = useAuth();
+  const user: AuthHookType<User> = useAuth();
 
   // Handle Set Message
-  const handleSetMessage: any = (value: string) => setMessage(value);
+  const handleSetMessage: any = (value: string) => setInputMessage(value);
 
   // get cursor position and add the emoji to message string
   const handleEmojiPickup = (emoji: any) => {
-    setMessage((prev) => prev + emoji.native);
+    setInputMessage((prev) => prev + emoji.native);
   };
 
   // Send messages to server
@@ -147,70 +233,72 @@ const Chat: FC = () => {
     const promise = async (): Promise<any> => {
       // Handle promise
       return new Promise(async (resolve, reject) => {
-        // User data
-        const _user = user.get;
+        // Temp User data
+        const temp: User = user.get;
 
         // Check has file
-        const hasFile = fileList.length > 0 || imageList.length > 0;
+        const hasFile: boolean = fileList.length > 0 || imageList.length > 0;
 
         // Check message valid
-        const isValid = Boolean(message) && message.trim() !== '';
+        const isValid: boolean =
+          Boolean(inputMessage) && inputMessage.trim() !== '';
 
         // Create message info
         const info: Messages = {
           files: [],
           sender: {
-            user: _user?._id,
-            avatar: _user?.avatar,
-            nickname: _user?.nickname,
+            user: temp?._id,
+            avatar: temp?.avatar,
+            nickname: temp?.nickname,
           },
-          messages: message.trim(),
+          state: MesssageState.BOTH,
+          messages: inputMessage.trim(),
           conversation: cvsContext.current.get?._id,
           type: hasFile ? MessageType.FILES : MessageType.TEXT,
         };
 
-        // Check message valid or has file
-        if (hasFile || isValid) {
-          // Has file
-          if (hasFile) {
-            // Each and add file to form data
-            const formData = new FormData();
+        // Has file
+        if (hasFile) {
+          // Each and add file to form data
+          const formData: FormData = new FormData();
 
-            // Add files
-            [...fileList, ...imageList]?.forEach((file: UploadFile) => {
-              // File original
-              const orf = file?.originFileObj as FileType;
+          // Add files
+          [...fileList, ...imageList]?.forEach((file: UploadFile) => {
+            // File original
+            const orf = file?.originFileObj as FileType;
 
-              // Append
-              formData.append('files[]', orf);
-            });
+            // Append
+            formData.append('files[]', orf);
+          });
 
-            // Clear file list
-            setFileList([]);
+          // Clear file list
+          setFileList([]);
 
-            // Clear image list
-            setImageList([]);
+          // Clear image list
+          setImageList([]);
 
-            // Upload Image
-            const uploaded: Response = await fetcher({
-              method: 'UPLOAD',
-              url: '/messages/upload',
-              payload: formData,
-            });
+          // Upload Image
+          const uploaded: Response = await fetcher({
+            method: 'UPLOAD',
+            url: '/messages/upload',
+            payload: formData,
+          });
 
-            // Check is uploaed success
-            if (uploaded?.status === 201) {
-              // Push files name
-              info.files = uploaded.data;
-            }
+          // Check is uploaed success
+          if (uploaded?.status === 201) {
+            // Push files name
+            info.files = uploaded.data;
           }
+
+          // Resolve Data
+          resolve(info);
+        } else if (isValid) {
+          // Resolve Data
+          resolve(info);
         }
 
         // Clear message
-        setMessage('');
-
-        // Resolve Data
-        resolve(info);
+        setInputMessage('');
 
         // Resject
         reject();
@@ -221,9 +309,9 @@ const Chat: FC = () => {
     promise()
       .then((res) => {
         // Send Message
-        socket.emit('chat-message', res);
+        socket.emit('chat:server', res);
       })
-      .catch(() => {});
+      .catch(() => { });
   };
 
   // First Loading Use Effect
@@ -231,31 +319,97 @@ const Chat: FC = () => {
     // Check socket connected
     if (socket) {
       // Subscribes events
-      socket?.on('chats', async (mes: Messages) => {
-        // Check conversation
-        if (mes?.conversation === cvsContext.current.get?._id) {
+      socket?.on('chat:client', async (mes: Messages) => {
+        // Find conversation
+        const find = cvsContext.list.get?.find(
+          (item) => item._id === mes.conversation,
+        );
+
+        // Check find
+        if (find) {
           // Destructure
-          const { last_message, ...data } = mes;
+          const { last_message, ...data }: Messages = mes;
 
           // Updated conversation
           const updated = {
-            ...cvsContext.current.get,
+            ...find,
             last_message,
             last_send: data.send_at,
           };
 
-          // Set current conversation
-          await cvsContext.current.update(updated);
+          // Check conversation
+          if (mes?.conversation === cvsContext.current.get?._id) {
+            // Set current conversation
+            await cvsContext.current.update(updated);
 
-          // Set message
-          setMessages((prev) => [data, ...prev]);
+            // Set message
+            setMessages((prev) => [data, ...prev]);
+          } else {
+            // Set current conversation
+            await cvsContext.list.update(updated);
+          }
         }
       });
+
+      // Chat actions client
+      socket?.on(
+        'chat.actions:client',
+        async (client: { action: MesssageActionEnum; message: Messages }) => {
+          // Client message
+          const mes = client?.message;
+
+          // Check conversation
+          if (mes?.conversation === cvsContext.current.get?._id) {
+            // Check is not tranfert
+            if (client?.action === MesssageActionEnum.TRANSFERT) {
+              // Update conversation last message
+              // cvsContext.current.update({
+              //   ...tranfCvs,
+              //   last_message: res.data.last_message,
+              //   last_send: res.data.send_at,
+              // });
+            } else {
+              // Set message
+              setMessages((prev) => {
+                // Filter message
+                const newMessages = prev
+                  ?.map((mesa) => {
+                    // Check message
+                    if (mesa?._id === mes?._id) {
+                      // Updated message
+                      return {
+                        ...mesa,
+                        state: mes.state,
+                      };
+                    }
+
+                    // Return
+                    return mesa;
+                  })
+                  ?.filter((mesa) => mesa !== null) as Messages[];
+
+                // Rreturn
+                return newMessages;
+              });
+            }
+
+            // Check and show message
+            message.success(
+              client?.action === MesssageActionEnum.TRANSFERT
+                ? 'Chuyển tiếp tin nhán thành công'
+                : client?.action === MesssageActionEnum.DELETE
+                ? 'Xoá tin nhán thành công'
+                : 'Thu hồi tin nhán thành công',
+            );
+          }
+        },
+      );
     }
 
     // Cleanup
     return () => {
-      socket?.off('chats');
+      socket?.off('chats:client');
+      socket?.off('chat.actions:client');
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cvsContext.current.get, socket]);
@@ -284,10 +438,10 @@ const Chat: FC = () => {
   // Effect
   useEffect(() => {
     // List conversation length
-    const listCvsLength: number = cvsContext.list.get?.length;
+    const listCvsLength: number = cvsContext.list.get?.length as number;
 
     // Loading current conversation
-    listCvsLength > 0 &&
+    listCvsLength > 0 && !(cvsContext.current.get) &&
       (async () => {
         // Load data to session storage
         const sessionCvs = sessionStorage.getItem('tshus.curent.conversation');
@@ -304,7 +458,7 @@ const Chat: FC = () => {
           setCurrentCvs(parse.cvs);
         } else {
           // Set default current conversation
-          setCurrentCvs(cvsContext.list.get[0]);
+          setCurrentCvs(cvsContext.list.get?.[0]);
         }
 
         // Enable loading
@@ -321,8 +475,13 @@ const Chat: FC = () => {
   // Use Effect
   useEffect(() => {
     // Current conversation id
-    const cvsId: string = cvsContext.current.get?._id;
+<<<<<<< HEAD
+    const cvsId: string = cvsContext.current.get?._id as string;
 
+=======
+    const cvsId: string = cvsContext.current.get?._id;
+    
+>>>>>>> ad4e62adbe339590df7032be9c3bc91d913e8f1f
     // Caling
     cvsId &&
       (async () => {
@@ -350,67 +509,108 @@ const Chat: FC = () => {
     };
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cvsContext.current.get]);
+  }, [cvsContext.current.get?._id]);
 
   const DrawerContent = (cvs: Conversations) => {
     // Is room
-    const isRoom = cvsContext.current.get?.type === ConversationEnum.ROOMS;
+    const isRoom: boolean = cvs?.type === ConversationEnum.ROOMS;
+
+<<<<<<< HEAD
+    // Data
+    const data: ChaterType | Rooms = isRoom
+      ? cvs?.rooms?.[0]
+      : cvs?.chats?.[0]?.[
+          `${
+            user.get?._id === cvs?.chats?.[0]?.inviter?.user
+              ? 'friend'
+              : 'inviter'
+          }`
+        ];
+=======
+    const chats =cvsContext.current.get?.chats?.[0];
+>>>>>>> ad4e62adbe339590df7032be9c3bc91d913e8f1f
+
+    const isInviter = user.get?._id === chats?.inviter?.user;
+
 
     // Data
-    const data = isRoom ? cvs?.rooms?.[0] : cvs?.chats?.[0]?.friend;
+    const data = isRoom 
+    ?cvs?.rooms?.[0]
+    :isInviter 
+    ? cvs?.chats?.[0]?.friend
+    : cvs?.chats?.[0]?.inviter;
 
+  
+    
     // Return
     return (
       <Flex
         vertical
         style={{ height: '100%', overflow: 'auto', scrollbarWidth: 'none' }}
       >
-        <Flex align="center" gap={15} vertical>
-          <Avatar
-            shape="square"
-            style={{ width: '100%', height: 200, fontSize: 50 }}
-            alt={isRoom ? data?.name?.charAt(0) : data?.nickname?.charAt(0)}
-            src={
-              isRoom
-                ? `${BASE_URL}/${data?.image}`
-                : `${BASE_URL}/${data?.avatar}`
-            }
-          >
-            {isRoom ? data?.name?.charAt(0) : data?.nickname?.charAt(0)}
-          </Avatar>
-          <Flex gap={1} vertical align="center">
-            <Text style={{ fontSize: 23 }}>
-              {isRoom ? data?.name : data?.nickname}
-            </Text>
-            <Flex align="center" gap={5}>
-              <Badge dot status="success" />
-              <Text type="secondary" style={{ fontSize: 13 }}>
-                Đang hoạt động
-              </Text>
-            </Flex>
-          </Flex>
-        </Flex>
+        <ContentViewHead isRoom={isRoom} data={data} onlines={onlines}/>
         <Divider plain orientationMargin="0" dashed />
+<<<<<<< HEAD
+        {isRoom && (data as Rooms)?.roommembers?.length > 0 ? (
+          <Flex justify="center" gap={15}>
+            {(data as Rooms)?.roommembers?.[0]?.user === user.get?._id &&
+              (data as Rooms)?.roommembers?.[0]?.role ===
+                RoommembersEnum.MANAGER && (
+                <Fragment>
+                  <AddMemberToGroupModal />
+                  <DeleteMemberFromGroupModal roommembers={roommembers} />
+                </Fragment>
+              )}
+            <Button style={{ height: 'unset', padding: '5px' }}>
+              <Flex align="center">
+                <DotsThree size={20} />
+              </Flex>
+            </Button>
+          </Flex>
+        ) : (
+          <Flex justify="center" gap={10}>
+            {!isRoom && (
+              <Button
+                style={{ height: 'unset', padding: '5px' }}
+                onClick={() => callingHandle((data as ChaterType)?.user)}
+              >
+                <Flex align="center">
+                  <Phone size={20} />
+                </Flex>
+              </Button>
+            )}
+            <Button style={{ height: 'unset', padding: '5px' }}>
+              <Flex align="center">
+                <DotsThree size={20} />
+              </Flex>
+            </Button>
+          </Flex>
+        )}
+=======
         <Flex justify="center">
           {isRoom && data?.roommembers?.length > 0 && (
             <Fragment>
               <AddMemberToGroupModal />
-              <DeleteMemberFromGroupModal roommembers={roommembers}/>
+              <DeleteMemberFromGroupModal roommembers={roommembers} />
             </Fragment>
           )}
         </Flex>
+>>>>>>> ad4e62adbe339590df7032be9c3bc91d913e8f1f
         <Divider plain orientationMargin="0" dashed />
         <Collapse defaultActiveKey={['1']}>
           <Collapse.Panel key={'1'} header="THÔNG TIN">
             <Flex align="left" gap={15} vertical>
               <Flex vertical gap={10}>
                 <Flex align="center" gap={15}>
-                  <User
+                  <UserIcon
                     size={18}
                     style={{ color: token.colorTextDescription }}
                   />
                   <Text style={{ fontSize: 13.5, fontWeight: '400' }}>
-                    Tên: {isRoom ? data?.name : data?.nickname}
+                    Tên:{' '}
+                    {isRoom
+                      ? (data as Rooms)?.name
+                      : (data as ChaterType)?.nickname}
                   </Text>
                 </Flex>
                 <Flex align="center" gap={15}>
@@ -428,10 +628,9 @@ const Chat: FC = () => {
                     style={{ color: token.colorTextDescription }}
                   />
                   <Text style={{ fontSize: 13.5, fontWeight: '400' }}>
-                    Ngày tạo: {formatToDateTime(cvs?.createdAt.toString())}
+                    Ngày tạo: {formatToDateTime(cvs?.created_at?.toString())}
                   </Text>
                 </Flex>
-
                 {isRoom && (
                   <Fragment>
                     <Flex align="center" gap={15}>
@@ -440,7 +639,8 @@ const Chat: FC = () => {
                         style={{ color: token.colorTextDescription }}
                       />
                       <Text style={{ fontSize: 13.5, fontWeight: '400' }}>
-                        Số lượng thành viên: {data?.members_count} thành viên
+                        Số lượng thành viên: {(data as Rooms)?.members_count}{' '}
+                        thành viên
                       </Text>
                     </Flex>
                   </Fragment>
@@ -452,7 +652,7 @@ const Chat: FC = () => {
                   />
                   <Text style={{ fontSize: 13.5, fontWeight: '400' }}>
                     Tin nhắn mới nhất:{' '}
-                    {formatToDateTime(cvs?.last_send.toString())}
+                    {formatToDateTime(cvs?.last_send?.toString())}
                   </Text>
                 </Flex>
               </Flex>
@@ -469,11 +669,10 @@ const Chat: FC = () => {
                     key={member._id}
                     justify="space-between"
                     style={{ cursor: 'pointer', padding: 2, borderRadius: 5 }}
-                    className={`${
-                      config.get.theme === ThemeEnum.DARK
-                        ? 'cvs-d-hover'
-                        : 'cvs-l-hover'
-                    }`}
+                    className={`${config.get.theme === ThemeEnum.DARK
+                      ? 'cvs-d-hover'
+                      : 'cvs-l-hover'
+                      }`}
                     align="center"
                   >
                     <Flex align="center" gap={15}>
@@ -499,11 +698,38 @@ const Chat: FC = () => {
   };
 
   const ContentView = (cvs: Conversations) => {
+<<<<<<< HEAD
+    // Check is room
+    const isRoom: boolean = cvs?.type === ConversationEnum.ROOMS;
+
+    // Conversation Data
+    const data: any = isRoom
+      ? cvs?.rooms?.[0]
+      : cvs?.chats?.[0]?.[
+          `${
+            user.get?._id === cvs?.chats?.[0]?.inviter?.user
+              ? 'friend'
+              : 'inviter'
+          }`
+        ];
+
     // Conversation Name
-    const cvsName =
-      cvs?.type === ConversationEnum.ROOMS
-        ? cvs?.rooms?.[0]?.name
-        : cvs?.chats?.[0]?.friend?.nickname;
+    const cvsName = isRoom ? data?.name : data?.nickname;
+=======
+   
+    // Is Rooms
+    const isRooms = cvs?.type === ConversationEnum.ROOMS;
+
+    const chats = cvs?.chats?.[0];
+
+    const isInviter = user.get?._id === chats?.inviter?.user;
+
+    const cvsName = isRooms
+      ? cvs?.rooms[0]?.name
+      : isInviter
+      ? chats?.friend?.nickname
+      : chats?.inviter?.nickname;
+>>>>>>> ad4e62adbe339590df7032be9c3bc91d913e8f1f
 
     // Return
     return currCvsLoading === true || (currCvsLoading === false && cvs) ? (
@@ -519,25 +745,41 @@ const Chat: FC = () => {
             <Flex align="center" gap={15}>
               {!currCvsLoading ? (
                 <Fragment>
-                  <Badge
-                    dot
-                    style={{
-                      padding: 3.5,
-                      backgroundColor: token.colorSuccess,
-                    }}
-                    status="processing"
-                    offset={[-1, '100%']}
-                  >
-                    <Avatar shape="square" alt={'1'} size={35}>
-                      {cvsName?.charAt(0)}
-                    </Avatar>
-                  </Badge>
-                  <Flex gap={1} vertical justify="space-between">
-                    <Text style={{ fontSize: 13 }}>{cvsName}</Text>
-                    <Text type="secondary" style={{ fontSize: 11 }}>
-                      Đang hoạt động
-                    </Text>
-                  </Flex>
+                  {isOnline(onlines, isRoom, data) ? (
+                    <Fragment>
+                      <Badge
+                        dot
+                        style={{
+                          padding: 3.5,
+                          backgroundColor: token.colorSuccess,
+                        }}
+                        status="processing"
+                        offset={[-1, '100%']}
+                      >
+                        <Avatar shape="square" alt={'1'} size={35}>
+                          {cvsName?.charAt(0)}
+                        </Avatar>
+                      </Badge>
+                      <Flex gap={1} vertical justify="space-between">
+                        <Text style={{ fontSize: 13 }}>{cvsName}</Text>
+                        <Text type="secondary" style={{ fontSize: 11 }}>
+                          Đang hoạt động
+                        </Text>
+                      </Flex>
+                    </Fragment>
+                  ) : (
+                    <Fragment>
+                      <Avatar shape="square" alt={'1'} size={35}>
+                        {cvsName?.charAt(0)}
+                      </Avatar>
+                      <Flex gap={1} vertical justify="space-between">
+                        <Text style={{ fontSize: 13 }}>{cvsName}</Text>
+                        <Text type="secondary" style={{ fontSize: 11 }}>
+                          Hiện đang ngoại tuyến
+                        </Text>
+                      </Flex>
+                    </Fragment>
+                  )}
                 </Fragment>
               ) : (
                 <Flex gap={10} align="center">
@@ -555,14 +797,37 @@ const Chat: FC = () => {
                 </Flex>
               )}
             </Flex>
+<<<<<<< HEAD
+            <Flex gap={20}>
+              {!isRoom && (
+                <Button
+                  onClick={() => callingHandle(!isRoom ? data : null)}
+                  style={{ height: 'unset', padding: '5px' }}
+                >
+                  <Flex align="center">
+                    <Phone size={20} />
+                  </Flex>
+                </Button>
+              )}
+              <Button
+                onClick={showDrawer}
+                style={{ height: 'unset', padding: '5px' }}
+              >
+                <Flex align="center">
+                  <DotsThree size={20} />
+                </Flex>
+              </Button>
+            </Flex>
+=======
             <Button
               onClick={showDrawer}
               style={{ height: 'unset', padding: '0' }}
             >
               <Flex align="center">
                 <DotsThree size={20} />
-              </Flex>
+              </Flex>g
             </Button>
+>>>>>>> ad4e62adbe339590df7032be9c3bc91d913e8f1f
           </Flex>
         </Flex>
         <ChatContent mes={messages} cvsId={cvs?._id} setMes={setMessages} />
@@ -595,7 +860,7 @@ const Chat: FC = () => {
                   onPressEnter={(e) => !e.shiftKey && onSubmit(e)}
                   placeholder="Nhập nội dung tin nhắn"
                   autoSize
-                  value={message}
+                  value={inputMessage}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -662,11 +927,11 @@ const Chat: FC = () => {
           <ChatSide token={token} cvsContext={cvsContext} user={user} />
         </Col>
         <Col xl={19} lg={18} md={16} sm={0} xs={0} className="h-100">
-          {ContentView(cvsContext.current.get)}
+          {ContentView(cvsContext.current.get as Conversations)}
         </Col>
       </Row>
       <Drawer title="Thông tin cuộc trò chuyện" onClose={onClose} open={open}>
-        {DrawerContent(cvsContext.current.get)}
+        {DrawerContent(cvsContext.current.get as Conversations)}
       </Drawer>
     </Fragment>
   );

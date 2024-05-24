@@ -1,5 +1,5 @@
 export enum RoomRoleEnum {
-    MANAGER = 'MANAGER',
-    MEMBER = 'MEMBER',
-  }
-  
+     MANAGER = 'MANAGER',
+     MEMBER = 'MEMBER',
+   }
+   

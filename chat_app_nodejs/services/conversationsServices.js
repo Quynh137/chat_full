@@ -12,7 +12,7 @@ class ConversationsServices {
       // Created
       const created = await conversationsModel.create({
         type: body?.type,
-        createdAt: new Date(),
+        created_at: new Date(),
       });
 
       // Return
@@ -82,7 +82,7 @@ class ConversationsServices {
       // Created
       const created = await conversationsModel.create({
         type: body?.type,
-        createdAt: new Date(),
+        created_at: new Date(),
       });
 
       if (!withRef) return created;
@@ -104,7 +104,7 @@ class ConversationsServices {
 
     // Exception
     try {
-      const limit = 10;
+      const limit = 20;
 
       const finded = await conversationsModel.aggregate([
         {
@@ -179,11 +179,6 @@ class ConversationsServices {
                   as: 'roommembers',
                 },
               },
-              {
-                $match: {
-                  roommembers: { $not: { $size: 0 } },
-                },
-              },
             ],
           },
         },
@@ -191,11 +186,7 @@ class ConversationsServices {
           $match: {
             $expr: {
               $not: {
-                $and: [
-                  {
-                    $and: [{ $eq: ['$chats', []] }, { $eq: ['$rooms', []] }],
-                  },
-                ],
+                $and: [{ $eq: ['$chats', []] }, { $eq: ['$rooms', []] }],
               },
             },
           },
@@ -205,6 +196,7 @@ class ConversationsServices {
       ]);
 
       // Return
+      // console.log(finded);
       return finded;
     } catch (error) {
       // Throw http exception

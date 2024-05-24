@@ -11,6 +11,13 @@ body {
   min-height: 100vh;
 }
 
+.cvs-modal-call .ant-modal-content {
+  padding-left: 0;
+  padding-right: 0;
+  padding-bottom: 0;
+  overflow: hidden;
+}
+
 #root, .ant-app .ant-layout{
   width: inherit;
   height: 100vh;

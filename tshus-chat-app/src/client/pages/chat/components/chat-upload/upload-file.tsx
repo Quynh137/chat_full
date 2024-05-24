@@ -10,21 +10,21 @@ import {
   UploadFile,
   UploadProps,
 } from 'antd';
-import React from 'react';
+import { Dispatch, FC, Fragment, memo, RefObject, SetStateAction } from 'react';
 
 type Props = {
   fileList: UploadFile[];
-  setFileList: React.Dispatch<React.SetStateAction<UploadFile[]>>;
-  uploadBtn: React.RefObject<HTMLButtonElement>;
+  setFileList: Dispatch<SetStateAction<UploadFile[]>>;
+  uploadBtn: RefObject<HTMLButtonElement>;
 };
 
-const ChatUploadFile: React.FC<Props> = ({
+const ChatUploadFile: FC<Props> = ({
   fileList,
   setFileList,
   uploadBtn,
 }: Props) => {
   // Notify
-  const {notification} = App.useApp();
+  const { notification } = App.useApp();
 
   // Handle custom request
   const handleCustomRequest: UploadProps['customRequest'] = (options: any) => {
@@ -84,7 +84,7 @@ const ChatUploadFile: React.FC<Props> = ({
 
   // Return
   return (
-    <React.Fragment>
+    <Fragment>
       <div style={{ display: 'none' }}>
         <Upload {...props} multiple>
           <Button hidden ref={uploadBtn} style={{ display: 'none' }} />
@@ -117,8 +117,8 @@ const ChatUploadFile: React.FC<Props> = ({
           </Space>
         </Popover>
       )}
-    </React.Fragment>
+    </Fragment>
   );
 };
 
-export default React.memo(ChatUploadFile);
+export default memo(ChatUploadFile);

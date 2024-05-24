@@ -18,4 +18,5 @@ router.post("/create", create);
 router.get("/page", page);
 router.delete("/unsend", unmessage);
 router.delete("/delete", remove);
+router.patch("/forward/:id", forwardMessage);
 module.exports = router;

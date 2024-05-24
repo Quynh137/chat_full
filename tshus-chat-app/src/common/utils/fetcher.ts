@@ -5,13 +5,10 @@ import { getCookie } from './cookie';
 const host = 'localhost';
 
 // Server Port
-const port = '3001';
+const port = '8080';
 
 // Base Url
 export const BASE_URL = `http://${host}:${port}`;
-
-// Base Url
-export const AWS_URL = `https://myimagechat.s3.ap-southeast-1.amazonaws.com`;
 
 // API api
 const api = axios.create({
@@ -29,9 +26,9 @@ api.interceptors.request.use((config) => {
 
   // Check token is valid
   if (token) {
+    // Set token to auth header
     config.headers['Authorization'] = `Bearer ${token}`;
   }
-  console.log('config', config);
   return config;
 });
 
@@ -45,7 +42,6 @@ const fetching = async (response: any) => {
 
   // Return Data
   return { status, data };
-  
 };
 
 // Custom Fetcher
@@ -75,7 +71,6 @@ const PUT = async (url: string, data: any) => {
 const UPLOAD = async (
   url: string,
   payload: FormData,
-  route: Function | null = null,
 ) => {
   // Send file list
   const response: any = await api
@@ -95,7 +90,6 @@ const UPLOAD = async (
 export const GET = async (
   url: string,
   params: { [key: string]: any } | null = null,
-  route: Function | null = null,
 ) => {
   // Response
   const response: any = await api
@@ -111,31 +105,12 @@ export const GET = async (
 const DELETE = async (
   url: string,
   params: { [key: string]: any } | null = null,
-  route: Function | null = null,
 ) => {
-  // String params
-  const strParams = params
-    ? Object.keys(params)
-        .map((key) => `${key}=${params[key]}`)
-        .join('&')
-    : null;
-
-  // Token
-  // const accessToken: string | null = getCookie('token')?.accessToken;
-  const accessToken = getCookie('token');
-
-  // Create Fetch
-  const response: any = await fetch(
-    `${BASE_URL}${url}${strParams ? `?${strParams}` : ''}`,
-    {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-    },
-  );
-
+  // Response
+  const response: any = await api
+    .delete(url, { params })
+    .then((res) => res)
+    .catch((err) => err.response);
   // Return Fetching
   return fetching(response);
 };

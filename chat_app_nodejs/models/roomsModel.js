@@ -12,10 +12,9 @@ const RoomsSchema = new mongoose.Schema(
     name: { type: String, required: true, maxlength: 255 },
     image: { type: String, default: "" },
     member_count: { type: Number, require: true },
-  },
-  {
-    timestamps: true,
-  },
+    created_at: { type: Date, default: Date.now },
+    updated_at: { type: Date, default: Date.now },
+  }
 );
 
 // Rooms Model

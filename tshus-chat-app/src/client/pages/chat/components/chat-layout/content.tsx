@@ -1,4 +1,3 @@
-import React from 'react';
 import ChatLine from './line';
 import { Divider, Flex } from 'antd';
 import InfiniteScroll from 'react-infinite-scroll-component';
@@ -6,20 +5,22 @@ import { fetcher } from '@/common/utils/fetcher';
 import { Response } from '@/common/types/response/response.type';
 import { Messages } from '@/common/interface/Messages';
 import EmptyVertical from '@/client/components/empty/vertical.empty';
+import { Dispatch, FC, Fragment, memo, SetStateAction, useState } from 'react';
+
 
 type Props = {
   mes: Messages[];
   cvsId: any;
-  setMes: React.Dispatch<React.SetStateAction<any[]>>;
+  setMes: Dispatch<SetStateAction<any[]>>;
 };
 
-const ChatContent: React.FC<Props> = React.memo(
+const ChatContent: FC<Props> = memo(
   ({ mes, cvsId, setMes }: Props) => {
     // Page
-    const [page, setPage] = React.useState<number>(1);
+    const [page, setPage] = useState<number>(1);
 
     // Is has more
-    const [hasMore, setHasMore] = React.useState<boolean>(true);
+    const [hasMore, setHasMore] = useState<boolean>(true);
 
     const next = async () => {
       // Get messages
@@ -65,7 +66,7 @@ const ChatContent: React.FC<Props> = React.memo(
               hasMore={hasMore}
               dataLength={mes.length}
               scrollableTarget="scrollableDiv"
-              loader={<React.Fragment />}
+              loader={<Fragment />}
               endMessage={<Divider plain>Không còn tin nhắn nào</Divider>}
               style={{
                 display: 'flex',
@@ -73,8 +74,8 @@ const ChatContent: React.FC<Props> = React.memo(
                 scrollBehavior: 'smooth',
               }}
             >
-              {mes?.map((msg) => (
-                <ChatLine key={msg._id} data={msg} />
+              {mes?.map((msg: Messages, index: number) => (
+                <ChatLine key={index} data={msg} />
               ))}
             </InfiniteScroll>
           </Flex>
@@ -88,4 +89,4 @@ const ChatContent: React.FC<Props> = React.memo(
   },
 );
 
-export default React.memo(ChatContent);
+export default memo(ChatContent);

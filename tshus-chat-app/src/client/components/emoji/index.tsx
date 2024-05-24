@@ -1,5 +1,5 @@
 import { Button, Popover, theme } from 'antd';
-import React from 'react';
+import  { FC, Fragment, useState } from 'react';
 import { SmileyWink } from '@phosphor-icons/react';
 import Picker from '@emoji-mart/react';
 import data from '@emoji-mart/data';
@@ -12,12 +12,12 @@ type Props = {
   onSelect: Function;
 };
 
-const EmojiPick: React.FC<Props> = ({ onSelect }: Props) => {
+const EmojiPick: FC<Props> = ({ onSelect }: Props) => {
   // Toeken
   const { token } = useToken();
 
   // Open State
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = useState(false);
 
   // Config
   const config = useConfig();
@@ -29,7 +29,7 @@ const EmojiPick: React.FC<Props> = ({ onSelect }: Props) => {
 
   // Return
   return (
-    <React.Fragment>
+    <Fragment>
       <Popover
         rootClassName="emoji-picker"
         content={
@@ -56,7 +56,7 @@ const EmojiPick: React.FC<Props> = ({ onSelect }: Props) => {
           }}
         />
       </Popover>
-    </React.Fragment>
+    </Fragment>
   );
 };
 

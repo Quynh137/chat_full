@@ -1,5 +1,5 @@
 import { Avatar, Badge, Flex, Typography, Popover, Skeleton } from 'antd';
-import React from 'react';
+import React, { FC, Fragment, memo, useEffect, useState } from 'react';
 import AddFriendsModal from '@/client/components/modals/friend/add/private';
 import Search from 'antd/es/input/Search';
 import { useConfig } from '@/common/hooks/use-config';
@@ -10,6 +10,10 @@ import { ConversationEnum } from '@/common/enum/conversation.enum';
 import { ThemeEnum } from '@/common/enum/theme.enum';
 import CreateGroupModal from '@/client/components/modals/friend/add/group';
 import EmptyHorizontal from '@/client/components/empty/horizontal.empty';
+import { SocketProps, TshusSocket } from '@/common/types/other/socket.type';
+import { useSocket } from '@/common/hooks/use-socket';
+import { useOnline } from '@/common/hooks/use-online';
+import { isOnline } from '@/common/utils/ultils';
 
 // Text
 const { Text } = Typography;
@@ -27,11 +31,14 @@ enum LoadingSearch {
   STATIC = 'STATIC',
 }
 
-const ChatSide: React.FC<Props> = ({ cvsContext, token, user }: Props) => {
+const ChatSide: FC<Props> = ({ cvsContext, token, user }: Props) => {
   // Config
   const config = useConfig();
 
   const delay = 300;
+
+  // Onlines
+  const onlines: SocketProps[] = useOnline();
 
   // Handle Set Conversation
   const handleSetCvs = (cvs: any) => {
@@ -40,17 +47,17 @@ const ChatSide: React.FC<Props> = ({ cvsContext, token, user }: Props) => {
   };
 
   // Search Cvs list
-  const [searchCvs, setSearchCvs] = React.useState<any[]>([]);
+  const [searchCvs, setSearchCvs] = useState<any[]>([]);
 
   // Search loading state
-  const [searchLoading, setSearchLoading] = React.useState<LoadingSearch>(
+  const [searchLoading, setSearchLoading] = useState<LoadingSearch>(
     LoadingSearch.STATIC,
   );
 
-  const [csvLoading, setCsvLoading] = React.useState<boolean>(true);
+  const [csvLoading, setCsvLoading] = useState<boolean>(true);
 
   // Search pop
-  const [searchPop, setSearchPop] = React.useState<boolean>(false);
+  const [searchPop, setSearchPop] = useState<boolean>(false);
 
   // On Search
   const onSearch = async (value: string) => {
@@ -85,7 +92,7 @@ const ChatSide: React.FC<Props> = ({ cvsContext, token, user }: Props) => {
   const debouncedOnSearch = debounce(onSearch, 500);
 
   // Use Effect
-  React.useEffect(() => {
+  useEffect(() => {
     // Load Conversations
     (async () => {
       // Enable loading
@@ -98,9 +105,9 @@ const ChatSide: React.FC<Props> = ({ cvsContext, token, user }: Props) => {
         payload: { page: 1, user: user.get?._id },
       });
 
-
       // Check response and handle data
       if (res?.status === 200) cvsContext.list.set(res?.data);
+
       // Disable Loading
       setTimeout(() => {
         setCsvLoading(false);
@@ -109,11 +116,12 @@ const ChatSide: React.FC<Props> = ({ cvsContext, token, user }: Props) => {
 
     // Return clean
     return () => cvsContext.list.set([]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Return
   return (
-    <React.Fragment>
+    <Fragment>
       <div style={{ padding: 20 }}>
         <Flex vertical>
           <Flex justify="space-between" align="center">
@@ -138,7 +146,7 @@ const ChatSide: React.FC<Props> = ({ cvsContext, token, user }: Props) => {
               color: token.colorTextPlaceholder,
             }}
           >
-            {/* 20 tin nhắn, 3 chưa đọc */}
+            20 tin nhắn, 3 chưa đọc
           </Text>
         </Flex>
         <Popover
@@ -252,13 +260,16 @@ const ChatSide: React.FC<Props> = ({ cvsContext, token, user }: Props) => {
 
               const chats = item?.chats?.[0];
 
-              const isInviter = user.get?._id === chats?.inviter?.user;
+              const data = isRooms
+                ? item?.rooms[0]
+                : user.get?._id === chats?.inviter?.user
+                ? chats?.friend
+                : chats?.inviter;
 
-              const cvsName = isRooms
-                ? item?.rooms[0]?.name
-                : isInviter
-                ? chats?.friend?.nickname
-                : chats?.inviter?.nickname;
+              // Check
+
+              // Cvs name
+              const cvsName = isRooms ? data?.name : data?.nickname;
 
               // Return
               return (
@@ -281,22 +292,38 @@ const ChatSide: React.FC<Props> = ({ cvsContext, token, user }: Props) => {
                     }`
                   }`}
                 >
-                  <Badge
-                    dot
-                    style={{
-                      padding: 3.5,
-                      background: token.colorSuccess,
-                    }}
-                    status="processing"
-                    offset={[-1, '100%']}
-                  >
+                  {isOnline(onlines, isRooms, data) ? (
+                    <Badge
+                      dot
+                      style={{
+                        padding: 3.5,
+                        background: token.colorSuccess,
+                      }}
+                      status="processing"
+                      offset={[-1, '100%']}
+                    >
+                      <Avatar shape="square" size={35}>
+                        {cvsName?.charAt(0)}
+                      </Avatar>
+                    </Badge>
+                  ) : (
                     <Avatar shape="square" size={35}>
                       {cvsName?.charAt(0)}
                     </Avatar>
-                  </Badge>
+                  )}
+
                   <Flex gap={1} vertical justify="space-between">
                     <Text style={{ fontSize: 13 }}>{cvsName}</Text>
-                    <Text type="secondary" style={{ fontSize: 11 }}>
+                    <Text
+                      type="secondary"
+                      style={{
+                        fontSize: 11,
+                        maxWidth: '170px',
+                        overflow: 'hidden',
+                        whiteSpace: 'nowrap',
+                        textOverflow: 'ellipsis',
+                      }}
+                    >
                       {item?.last_message || 'Không có tin nhắn nào'}
                     </Text>
                   </Flex>
@@ -312,14 +339,14 @@ const ChatSide: React.FC<Props> = ({ cvsContext, token, user }: Props) => {
           </Flex>
         )}
       </Flex>
-    </React.Fragment>
+    </Fragment>
   );
 };
 
-const SkeletonRender: React.FC = () => {
+const SkeletonRender: FC = () => {
   // Return
   return (
-    <React.Fragment>
+    <Fragment>
       {Array.from({ length: 7 }).map((item, index) => (
         <Flex
           key={index}
@@ -341,8 +368,8 @@ const SkeletonRender: React.FC = () => {
           />
         </Flex>
       ))}
-    </React.Fragment>
+    </Fragment>
   );
 };
 
-export default React.memo(ChatSide);
+export default memo(ChatSide);

@@ -11,12 +11,12 @@ import {
   UploadFile,
   UploadProps,
 } from 'antd';
-import React from 'react';
+import React, { Dispatch, FC, Fragment, RefObject, SetStateAction, useState } from 'react';
 
 type Props = {
   imageList: UploadFile[];
-  setImageList: React.Dispatch<React.SetStateAction<UploadFile[]>>;
-  uploadBtn: React.RefObject<HTMLButtonElement>;
+  setImageList: Dispatch<SetStateAction<UploadFile[]>>;
+  uploadBtn: RefObject<HTMLButtonElement>;
 };
 
 //  File type
@@ -38,19 +38,19 @@ const getBase64 = (file: FileType): Promise<string> =>
     reader.onerror = (error) => reject(error);
   });
 
-const ChatUploadImage: React.FC<Props> = ({
+const ChatUploadImage: FC<Props> = ({
   imageList,
   setImageList,
   uploadBtn,
 }: Props) => {
   // Preview state
-  const [previewOpen, setPreviewOpen] = React.useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   // Preview image
-  const [previewImage, setPreviewImage] = React.useState('');
+  const [previewImage, setPreviewImage] = useState('');
 
   // Preview title
-  const [previewTitle, setPreviewTitle] = React.useState('');
+  const [previewTitle, setPreviewTitle] = useState('');
 
   // Notify
   const {notification} = App.useApp();
@@ -86,27 +86,32 @@ const ChatUploadImage: React.FC<Props> = ({
     options?.onSuccess();
   };
 
-    // Check file typea
+  // Before upload
   const beforeUpload: UploadProps['beforeUpload'] = (file) => {
-    if (!file.type.startsWith('image') && !file.type.startsWith('video')) {
+    // Check file type
+    if (!file.type.startsWith('image')) {
+      // Key
       const key = `open${Date.now()}`;
+
+      // Notify
       notification.error({
         message: 'Không thể tải lên tệp tin',
         description: `
           Không thể tải lên tệp tin ${file.name} có kiểu ${file.type},
-          Chức năng này chỉ hỗ trợ tải lên các dạng hình ảnh và video
+          Chức năng này chỉ hỗ trợ tải lên các dạng hình ảnh và không hỗ trợ tải lên các tệp tin dạng khác
         `,
-        btn: <NotifyBox title="Đóng tất cả" notify={notification} id={key} />,
+        btn: <NotifyBox title="Đóng tất cả" notify={notification} id={key} />,
       });
+
+      // Return false
       return Upload.LIST_IGNORE;
     }
   };
-  
 
   // Handle change
   const handleChange: UploadProps['onChange'] = (info) => {
     // Check type file
-    if (info?.file?.type?.startsWith('image') || info?.file?.type?.startsWith('video')) {
+    if (info?.file?.type?.startsWith('image')) {
       // New file list data`
       let newImageList = [...info.fileList];
 
@@ -127,7 +132,7 @@ const ChatUploadImage: React.FC<Props> = ({
 
   // Return
   return (
-    <React.Fragment>
+    <Fragment>
       <div style={{ display: 'none' }}>
         <Upload style={{ display: 'none' }} {...props}>
           <Button hidden ref={uploadBtn} style={{ display: 'none' }} />
@@ -146,9 +151,9 @@ const ChatUploadImage: React.FC<Props> = ({
       {imageList?.length > 0 && (
         <Popover
           content={
-            <React.Fragment>
+            <Fragment>
               <Upload {...props} onPreview={handlePreview} />
-            </React.Fragment>
+            </Fragment>
           }
           title="Các hình ảnh đã tải lên"
           placement="topLeft"
@@ -171,7 +176,7 @@ const ChatUploadImage: React.FC<Props> = ({
           </Tag>
         </Popover>
       )}
-    </React.Fragment>
+    </Fragment>
   );
 };
 

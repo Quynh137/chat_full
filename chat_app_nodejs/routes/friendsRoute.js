@@ -9,7 +9,7 @@ router.get("/search", search);
 router.post("/send", send);
 
 // [GET] /send
-router.get("/page", page);
+router.get("/page", page);load_request
 
 router.delete('/cancel', cancel);
 

@@ -17,7 +17,7 @@ import {
   Typography,
   theme,
 } from 'antd';
-import React, { useState } from 'react';
+import React, { FC, Fragment, useState } from 'react';
 import {
   DownloadOutlined,
   RotateLeftOutlined,
@@ -25,8 +25,11 @@ import {
   SwapOutlined,
   ZoomInOutlined,
   ZoomOutOutlined,
+  DeleteOutlined,
+  UndoOutlined,
+  ForwardOutlined,
 } from '@ant-design/icons';
-import { AWS_URL, BASE_URL, fetcher } from '@/common/utils/fetcher';
+import { BASE_URL, fetcher } from '@/common/utils/fetcher';
 import { ThemeEnum } from '@/common/enum/theme.enum';
 import { useConfig } from '@/common/hooks/use-config';
 import { css } from '@emotion/css';
@@ -36,6 +39,12 @@ import { useConversations } from '@/client/hooks/user-conversations';
 import { ConversationEnum } from '@/common/enum/conversation.enum';
 import { Response } from '@/common/types/response/response.type';
 import { Conversations } from '@/common/interface/Conversations';
+import { useSocket } from '@/common/hooks/use-socket';
+import { HookType } from '@/common/types/other/hook.type';
+import { ConfigType } from '@/common/types/other/config.type';
+import { TshusSocket } from '@/common/types/other/socket.type';
+import { MesssageState } from '@/common/enum/message-state.enum';
+import { MesssageActionEnum } from '@/common/enum/user/message-actions.enum';
 
 type Props = { data: any };
 
@@ -58,7 +67,7 @@ const { useToken } = theme;
 
 // Download file
 const download = (file: any) => {
-  fetch(`${AWS_URL}/${file.filename}`)
+  fetch(`${BASE_URL}/${file.filename}`)
     .then((response) => response.blob())
     .then((blob) => {
       const url = URL.createObjectURL(new Blob([blob]));
@@ -72,7 +81,7 @@ const download = (file: any) => {
     });
 };
 
-const MessageFileLine: React.FC<FileMessage> = ({
+const MessageFileLine: FC<FileMessage> = ({
   token,
   files,
   isSender,
@@ -91,45 +100,67 @@ const MessageFileLine: React.FC<FileMessage> = ({
         <Row gutter={[10, 10]} justify={justify}>
           {files?.map((file: any, index: number) =>
             !file.mimetype.startsWith('image') ? (
-              <Col
-                span={24}
-                key={index}
-                style={{ display: 'flex', justifyContent: justify }}
-              >
-                <Button
-                  onClick={() => download(file)}
-                  type={isSender ? 'primary' : 'default'}
-                  style={{
-                    height: 'unset',
-                    padding: '6px 13px',
-                  }}
+              file.mimetype.startsWith('video') ? (
+                <Col
+                  key={index}
+                  span={files.length < 3 ? 20 / files?.length : 8}
                 >
-                  <Flex gap={10} align="center">
-                    <Flex
-                      style={{
-                        padding: 6,
-                        background: 'white',
-                        borderRadius: '50%',
-                        border: isSender
-                          ? 'none'
-                          : `1px solid ${token.colorBorder}`,
-                      }}
-                    >
-                      <Download
-                        weight="regular"
-                        size={19}
-                        color={token.colorPrimary}
+                  <Space
+                    className={css`
+                      padding: 6px;
+                      border-radius: 5px;
+                      border: 1px solid ${token.colorBorder};
+                    `}
+                  >
+                    <video width="320" height="240" controls>
+                      <source
+                        src={`${BASE_URL}/files/${file.filename}`}
+                        type={file.mimetype}
                       />
+                    </video>
+                  </Space>
+                </Col>
+              ) : (
+                <Col
+                  span={24}
+                  key={index}
+                  style={{ display: 'flex', justifyContent: justify }}
+                >
+                  <Button
+                    onClick={() => download(file)}
+                    type={isSender ? 'primary' : 'default'}
+                    style={{
+                      height: 'unset',
+                      padding: '6px 13px',
+                    }}
+                  >
+                    <Flex gap={10} align="center">
+                      <Flex
+                        style={{
+                          padding: 6,
+                          background: 'white',
+                          borderRadius: '50%',
+                          border: isSender
+                            ? 'none'
+                            : `1px solid ${token.colorBorder}`,
+                        }}
+                      >
+                        <Download
+                          weight="regular"
+                          size={19}
+                          color={token.colorPrimary}
+                        />
+                      </Flex>
+                      <Flex justify="center" vertical align="start">
+                        <Text style={{ color, fontSize: 14 }}>
+                          {file.originalname}
+                        </Text>
+                        <Text style={{ color, fontSize: 9 }}>{file.size}</Text>
+                      </Flex>
                     </Flex>
-                    <Flex justify="center" vertical align="start">
-                      <Text style={{ color, fontSize: 14 }}>
-                        {file.originalname}
-                      </Text>
-                      <Text style={{ color, fontSize: 9 }}>{file.size}</Text>
-                    </Flex>
-                  </Flex>
-                </Button>
-              </Col>
+                  </Button>
+                </Col>
+              )
             ) : (
               <Col key={index} span={files.length < 3 ? 24 / files?.length : 8}>
                 <Space
@@ -141,7 +172,7 @@ const MessageFileLine: React.FC<FileMessage> = ({
                 >
                   <Image
                     height="100%"
-                    src={`${AWS_URL}/${file.filename}`}
+                    src={`${BASE_URL}/files/${file.filename}`}
                     fallback="data:image/png;base64,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"
                     preview={{
                       toolbarRender: (
@@ -180,7 +211,7 @@ const MessageFileLine: React.FC<FileMessage> = ({
               </Col>
             ),
           )}
-          {msg?.trim() !== '' && (
+          {msg && msg?.trim() !== '' && (
             <span style={{ padding: '0 5px' }}>
               <MessageTextLine token={token} isSender={isSender} msg={msg} />
             </span>
@@ -191,11 +222,7 @@ const MessageFileLine: React.FC<FileMessage> = ({
   );
 };
 
-const MessageTextLine: React.FC<any> = ({
-  isSender,
-  token,
-  msg,
-}: TextMessage) => {
+const MessageTextLine: FC<any> = ({ isSender, token, msg }: TextMessage) => {
   // Config
   const config: any = useConfig();
 
@@ -241,14 +268,107 @@ const MessageTextLine: React.FC<any> = ({
   );
 };
 
-const ChatLine: React.FC<Props> = ({ data }: Props) => {
+// Message Node
+const MessageNode = ({ data, justify, token, isSender }: any) => {
+  // Return
+  return (
+    <Flex justify={justify}>
+      {data?.type === MessageType.TEXT ? (
+        <MessageTextLine
+          token={token}
+          isSender={isSender}
+          msg={data?.messages}
+        />
+      ) : (
+        <MessageFileLine
+          token={token}
+          isSender={isSender}
+          files={data?.files}
+          msg={data?.messages}
+        />
+      )}
+    </Flex>
+  );
+};
+
+const UnsendMessage: React.FC<any> = ({
+  isSender,
+  token,
+  msg,
+}: TextMessage) => {
+  // Config
+  const config: any = useConfig();
+
+  // ligght theme
+  const isLight: boolean = config?.theme === ThemeEnum.LIGHT;
+
+  // Return
+  return (
+    <Space
+      className={css`
+        height: 32px;
+        border-radius: 5px;
+        padding: 8px 13px;
+        position: relative;
+        border: 0.1px solid ${token.colorBorder};
+      `}
+    >
+      {isSender ? (
+        <Text
+          className={css`
+            color: ${token.colorText};
+          `}
+        >
+          {msg}
+        </Text>
+      ) : (
+        <Text
+          className={css`
+            color: ${isLight ? '#000' : 'rgb(97, 97, 97)'};
+          `}
+        >
+          {msg}
+        </Text>
+      )}
+    </Space>
+  );
+};
+
+// Check message state and render
+const renderMessage = (props: any) => {
+  // Check sw
+  switch (props.data.state) {
+    case MesssageState.RECEIVER:
+      return !props.isSender ? (
+        <MessageNode {...props} />
+      ) : (
+        <UnsendMessage
+          isSender={props.isSender}
+          token={props.token}
+          msg="Tin nhắn đã bị xoá"
+        />
+      );
+    case MesssageState.NONE:
+      return (
+        <UnsendMessage
+          isSender={props.isSender}
+          token={props.token}
+          msg="Tin nhắn đã bị thu hồi"
+        />
+      );
+    default:
+      return <MessageNode {...props} />;
+  }
+};
+
+const ChatLine: FC<Props> = ({ data }: Props) => {
   // Toeken
   const { token } = useToken();
 
   // User
   const user: any = useAuth();
 
-  const isSender = user.get?._id === data?.sender?.user;
+  const isSender: boolean = user.get?._id === data?.sender?.user;
 
   const cvsContext = useConversations();
 
@@ -257,45 +377,38 @@ const ChatLine: React.FC<Props> = ({ data }: Props) => {
   // Set tranf conversation id
   const [tranfCvs, setTransfCvs] = useState<Conversations | null>(null);
 
-  const showModal = () => setTranfModelOpen(true);
+  // Show tranfrt mo
+  const showTransfertMesModal = () => setTranfModelOpen(true);
 
   // Use message app
   const { message } = App.useApp();
 
   // Config
-  const config = useConfig();
+  const config: HookType<ConfigType> = useConfig();
+
+  // Socket
+  const socket: TshusSocket = useSocket();
 
   const handleOk = async () => {
-    // Delete _id
-    const { _id, ...transferMessage } = data;
+    // Exception
+    try {
+      // Check socket
+      if (socket) {
+        // Delete _id
+        const { _id, ...transferMessage } = data;
 
-    // Response
-    const res: Response = await fetcher({
-      method: 'POST',
-      url: '/messages/transfer',
-      payload: {
-        ...transferMessage,
-        conversation: tranfCvs?._id,
-      },
-    });
+        // Emit
+        socket?.emit('chat.actions:server', {
+          message: { ...transferMessage, conversation: tranfCvs?._id },
+          action: MesssageActionEnum.TRANSFERT,
+        });
 
-    // Close modal
-    setTranfModelOpen(false);
-
-    // Check status
-    if (res?.status === 200) {
-      // Update conversation last message
-      cvsContext.current.update({
-        ...tranfCvs,
-        last_message: res.data.last_message,
-        last_send: res.data.send_at,
-      });
-
-      // Show success message
-      message.success('Chuyển đổi thành công');
-    } else {
+        // Close modal
+        setTranfModelOpen(false);
+      }
+    } catch (error) {
       // Show error message
-      message.error('Chuyển đổi thất bại');
+      message.error('Chuyển tiếp tin nhắn không thành công');
     }
   };
 
@@ -305,29 +418,55 @@ const ChatLine: React.FC<Props> = ({ data }: Props) => {
   // Handle transfer conversation
   const handleTranfCvs = (transf: Conversations) => setTransfCvs(transf);
 
+  // Handle deleteMessage
+  const handleDelteMessage = async () => {
+    // Exception
+    try {
+      // Check socket
+      if (socket) {
+        // Send socket
+        socket?.emit('chat.actions:server', {
+          message: data,
+          action: MesssageActionEnum.DELETE,
+        });
+      }
+    } catch (error) {
+      // Show error
+      message.error('Xoá tin nhắn thất bại');
+    }
+  };
+
+  // Handle unMessage
+  const handleUnmessage = async () => {
+    // Exception
+    try {
+      // Check socket
+      if (socket) {
+        // Send socket
+        socket?.emit('chat.actions:server', {
+          message: data,
+          action: MesssageActionEnum.UNMESSAGE,
+        });
+      }
+    } catch (error) {
+      // Show error
+      message.error('Thu hồi tin nhắn thất bại');
+    }
+  };
+
   const justify = isSender ? 'end' : 'start';
 
   // Avatar
   const avatar = (
-    <Badge
-      dot
-      style={{
-        padding: 3.5,
-        background: token.colorSuccess,
-      }}
-      status="processing"
-      offset={[-1, '100%']}
+    <Avatar
+      size={28}
+      shape="square"
+      alt={data?.sender?.nickname?.charAt(0)}
+      style={{ fontSize: 13 }}
+      src={`${BASE_URL}/${data?.sender?.avatar}`}
     >
-      <Avatar
-        size={28}
-        shape="square"
-        alt={data?.sender?.nickname?.charAt(0)}
-        style={{ fontSize: 13 }}
-        src={`${BASE_URL}/${data?.sender?.avatar}`}
-      >
-        {data?.sender?.nickname?.charAt(0)}
-      </Avatar>
-    </Badge>
+      {data?.sender?.nickname?.charAt(0)}
+    </Avatar>
   );
 
   // Return
@@ -349,6 +488,50 @@ const ChatLine: React.FC<Props> = ({ data }: Props) => {
                   {data?.sender?.nickname}
                 </Text>
               </Flex>
+<<<<<<< HEAD
+              <Flex gap={10} justify={justify}>
+                {data?.state === MesssageState.BOTH ? (
+                  <Popover
+                    placement={justify === 'end' ? 'left' : 'right'}
+                    content={
+                      <Flex gap={10}>
+                        {isSender && (
+                          <Fragment>
+                            <Button
+                              type="text"
+                              size="small"
+                              icon={<DeleteOutlined size={20} />}
+                              onClick={handleDelteMessage}
+                            />
+                            <Button
+                              type="text"
+                              size="small"
+                              icon={<UndoOutlined size={20} />}
+                              onClick={handleUnmessage}
+                            />
+                          </Fragment>
+                        )}
+                        <Button
+                          type="text"
+                          size="small"
+                          icon={<ForwardOutlined size={20} />}
+                          onClick={showTransfertMesModal}
+                        />
+                      </Flex>
+                    }
+                    trigger="contextMenu"
+                  >
+                    <Fragment>
+                      {renderMessage({ data, justify, token, isSender })}
+                    </Fragment>
+                  </Popover>
+                ) : (
+                  <Fragment>
+                    {renderMessage({ data, justify, token, isSender })}
+                  </Fragment>
+                )}
+              </Flex>
+=======
               <Popover
                 placement="left"
                 content={
@@ -367,7 +550,7 @@ const ChatLine: React.FC<Props> = ({ data }: Props) => {
                     />
                   ) : (
                     <MessageFileLine
-                      token={token}
+                      token={token} 
                       isSender={isSender}
                       files={data?.files}
                       msg={data?.messages}
@@ -375,6 +558,7 @@ const ChatLine: React.FC<Props> = ({ data }: Props) => {
                   )}
                 </Flex>
               </Popover>
+>>>>>>> ad4e62adbe339590df7032be9c3bc91d913e8f1f
             </Flex>
           </Flex>
         </Flex>
@@ -384,6 +568,7 @@ const ChatLine: React.FC<Props> = ({ data }: Props) => {
         open={tranfModelOpen}
         title="Chuyển tiếp tin nhắn"
         onCancel={handleCancel}
+        zIndex={1030}
       >
         <Radio.Group style={{ width: '100%' }} value={tranfCvs?._id}>
           {cvsContext?.list.get?.length > 0 ? (

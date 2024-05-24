@@ -9,10 +9,9 @@ const RoomMembersSchema = new mongoose.Schema(
     nickname: { type: String, required: true, maxlength: 255, index: 'text'},
     role: { type: String, enum: ["MANAGER", "MEMBER"], default: "MEMBER" },
     block: { type: Boolean, default: false },
-  },
-  {
-    timestamps: true,
-  },
+    created_at: { type: Date, default: Date.now },
+    updated_at: { type: Date, default: Date.now },
+  }
 );
 
 // RoomMembers Model

@@ -7,6 +7,6 @@ export interface User {
   nickname: string;
   phone: number;
   avatar: string;
-  createdAt: string;
+  created_at: string;
   updated_at: string;
 }

@@ -64,20 +64,16 @@ export function login(payload: AuthState): PayloadAction<AuthState> {
   };
 }
 
-export async function logout(callback: any): Promise<PayloadAction<AuthState>> {
+export function logout(): PayloadAction<AuthState>{
   // Remove cookie
   deleteCookie('token');
 
   // Remove user data
   deleteCookie('user');
 
-  setTimeout(async () => {
-    // Check callback and call
-    typeof callback === 'function' && (await callback());
-  }, 2000);
-
-  return Promise.resolve({
+  // Return
+  return {
     type: AuthActionType.LOGOUT,
     payload: {},
-  });
+  };
 }

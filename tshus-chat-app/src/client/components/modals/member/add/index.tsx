@@ -21,17 +21,16 @@ const AddMemberToGroupModal: FC = () => {
     <>
       <Tooltip title="Thêm thành viên">
         <Button
-          type="text"
           icon={<UsersThree size={20} />}
           onClick={showModal}
         />
       </Tooltip>
       <Modal
-        title="Thêm thành viên vào nhóm chat"
+        footer={[]}
         open={open}
         onOk={handleOk}
+        title="Thêm thành viên vào nhóm chat"
         onCancel={handleCancel}
-        footer={[]}
       >
         <div style={{ paddingTop: 10 }}>
           <FindAndSelectMember changeOpen={setOpen} />

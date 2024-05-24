@@ -1,6 +1,6 @@
 import { App, Avatar, Button, Flex, Modal, Tooltip, Typography } from 'antd';
 import { Hourglass, UserPlus, Users } from '@phosphor-icons/react';
-import React, { MouseEventHandler } from 'react';
+import React, { FC, Fragment, memo, MouseEventHandler, useEffect, useState } from 'react';
 import { fetcher } from '@/common/utils/fetcher';
 import { useAuth } from '@/client/hooks/use-auth';
 import { FriendStateEnum } from '@/common/enum/friend-state.enum';
@@ -11,6 +11,8 @@ import { Response } from '@/common/types/response/response.type';
 import { useConfig } from '@/common/hooks/use-config';
 import { AuthHookType } from '@/common/types/other/hook.type';
 import { UserHasFriend } from '@/common/types/user/user-has-friend.type';
+import { useSocket } from '@/common/hooks/use-socket';
+import { TshusSocket } from '@/common/types/other/socket.type';
 
 const { Text } = Typography;
 
@@ -82,7 +84,7 @@ const friendStatus = (
   }
 };
 
-const UsersFinded: React.FC<Props> = React.memo(
+const UsersFinded: FC<Props> = memo(
   ({ item, closeAddModal }: Props) => {
     // User
     const user: AuthHookType<User> = useAuth();
@@ -92,21 +94,24 @@ const UsersFinded: React.FC<Props> = React.memo(
     // Message
     const { message } = App.useApp();
 
+    // Socket
+    const socket: TshusSocket = useSocket();
+
     // Friend state
-    const [friend, setFriend] = React.useState<UserHasFriend | null>(null);
+    const [friend, setFriend] = useState<UserHasFriend | null>(null);
 
-    const [isModalOpen, setIsModalOpen] = React.useState<boolean>(false);
+    const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
-    const [opChatLoading, setOpChatLoading] = React.useState<boolean>(false);
+    const [opChatLoading, setOpChatLoading] = useState<boolean>(false);
 
     const showModal = () => setIsModalOpen(true);
 
     const handleCancel = () => setIsModalOpen(false);
 
-    const [reqfLoading, setReqfLoading] = React.useState<boolean>(false);
+    const [reqfLoading, setReqfLoading] = useState<boolean>(false);
 
     // Use Effect
-    React.useEffect(() => {
+    useEffect(() => {
       // Set friend
       setFriend(item);
 
@@ -120,11 +125,10 @@ const UsersFinded: React.FC<Props> = React.memo(
       // Enable loading
       setReqfLoading(true);
 
-      // Add friend
-      const res: Response = await fetcher({
-        method: 'POST',
-        url: '/friends/send',
-        payload: {
+      // Exception
+      try {
+        // Send socket add friend
+        socket?.emit('friend:server', {
           inviter: {
             user: user.get?._id,
             avatar: user.get?.avatar,
@@ -135,16 +139,10 @@ const UsersFinded: React.FC<Props> = React.memo(
             avatar: item?.avatar,
             nickname: item?.nickname,
           },
-        },
-      });
+        });
 
-      // Time delay
-      setTimeout(() => {
-        // Check response and handle data
-        if (res?.status !== 200) {
-          // Message error
-          message.error('Gửi yêu cầu kết bạn thất bại');
-        } else {
+        // Time delay
+        setTimeout(() => {
           // Set hasFriend
           setFriend((prev: UserHasFriend | null) => ({
             ...(prev as UserHasFriend),
@@ -154,11 +152,14 @@ const UsersFinded: React.FC<Props> = React.memo(
 
           // Message success
           message.success('Đã gửi yêu cầu kết bạn');
-        }
 
-        // Disable loading
-        setReqfLoading(false);
-      }, 1000);
+          // Disable loading
+          setReqfLoading(false);
+        }, 1000);
+      } catch (error) {
+        // Show error message
+        message.error('Gửi yêu cầu kết bạn thất bại');
+      }
     };
 
     const openChat = async () => {
@@ -202,7 +203,7 @@ const UsersFinded: React.FC<Props> = React.memo(
 
     // Return
     return (
-      <React.Fragment>
+      <Fragment>
         <Modal
           footer={null}
           open={isModalOpen}
@@ -249,9 +250,8 @@ const UsersFinded: React.FC<Props> = React.memo(
             justify="space-between"
             onClick={showModal}
             style={{ padding: '2px 3px', cursor: 'pointer' }}
-            className={`${
-              config.get.theme === 'dark' ? 'cvs-d-hover' : 'cvs-l-hover'
-            }`}
+            className={`${config.get.theme === 'dark' ? 'cvs-d-hover' : 'cvs-l-hover'
+              }`}
           >
             <Flex align="center" gap={15}>
               <Avatar
@@ -271,7 +271,7 @@ const UsersFinded: React.FC<Props> = React.memo(
             </Flex>
           </Flex>
         )}
-      </React.Fragment>
+      </Fragment>
     );
   },
 );

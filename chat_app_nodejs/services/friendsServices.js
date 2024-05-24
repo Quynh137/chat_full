@@ -2,7 +2,6 @@ const { mongoose } = require("mongoose");
 const friendsModel = require("../models/friendsModel");
 
 class FriendsServices {
-
   //Đặt trạng thái mối quan hệ bạn bè
   async create(props) {
     // Exception
@@ -18,8 +17,9 @@ class FriendsServices {
     }
   }
 
+<<<<<<< HEAD
   //Đặt trạng thái mối quan hệ bạn bè
-  async page(props) {
+  async page(params) {
     // Exception
     try {
       // Created
@@ -27,8 +27,8 @@ class FriendsServices {
         $and: [
           {
             $or: [
-              { "inviter.user": props.user },
-              { "friend.user": props.user },
+              { "inviter.user": params.user },
+              { "friend.user": params.user },
             ],
           },
           { state: "ACCEPTED" },
@@ -36,43 +36,99 @@ class FriendsServices {
         ],
       });
 
-      let data = {};
-      
+      const data = {};
+
       // Data
       friend?.forEach((i) => {
         // Check is inviter
-        if (i?.inviter?.user === props.user) {
+        if (i?.inviter?.user?.toString() === params.user) {
           // Group to
-          data[i.friend.nickname.charAt(0).toUpperCase()] = [i?.inviter];
+          data[i.friend.nickname.charAt(0).toUpperCase()] = [i?.friend];
         } else {
           // Group to
           data[i.inviter.nickname.charAt(0).toUpperCase()] = [i?.inviter];
         }
       });
-      
+
       //  Return
       return data;
-      
     } catch (error) {
       // Throw error
       throw new Error(error.message);
     }
-  }
+=======
+  // Đặt trạng thái mối quan hệ bạn bè
+async page(props) {
+  try {
+    const friends = await friendsModel.find({
+      $and: [
+        {
+          $or: [
+            { "inviter.user": props.user },
+            { "friend.user": props.user },
+          ],
+        },
+        { state: "ACCEPTED" },
+        { block: false },
+      ],
+    });
 
-  async load_request(props) {
+    let data = {};
+
+    friends?.forEach((i) => {
+      // Check if the current user is the inviter
+      if (i.inviter.user.toString() === props.user) {
+        // Group by the first character of friend's nickname
+        const key = i.friend.nickname.charAt(0).toUpperCase();
+        if (!data[key]) {
+          data[key] = [];
+        }
+        data[key].push({
+          nickname: i.friend.nickname,
+          avatar: i.friend.image,
+          user: i.friend.user.toString(),
+        });
+      } else if (i.friend.user.toString() === props.user) {
+        // Group by the first character of inviter's nickname
+        const key = i.inviter.nickname.charAt(0).toUpperCase();
+        if (!data[key]) {
+          data[key] = [];
+        }
+        data[key].push({
+          nickname: i.inviter.nickname,
+          avatar: i.inviter.image,
+          user: i.inviter.user.toString(),
+        });
+      }
+    });
+
+    // Return the organized data
+    return data;
+  } catch (error) {
+    // Throw error
+    throw new Error(error.message);
+>>>>>>> ad4e62adbe339590df7032be9c3bc91d913e8f1f
+  }
+}
+
+
+  async load_request(params) {
     // Exception
     try {
-      // Load reqeust
-      const request = await friendsModel.find({
-        $and: [{ "friend.user": props.user }, { state: "PENDING" }],
+      const query = await friendsModel.find({
+        $or: [
+          { $and: [{ "friend.user": params.user }, { state: "PENDING" }] },
+          { $and: [{ "inviter.user": params.user }, { state: "PENDING" }] },
+        ],
       });
 
-      // Load sended
-      const sended = await friendsModel.find({
-        $and: [{ "inviter.user": props.user }, { state: "PENDING" }],
-      });
+      const request = query.filter(
+        (r) => r?.friend?.user?.toString() === params.user,
+      );
+      const sended = query.filter(
+        (s) => s?.inviter.user?.toString() === params.user,
+      );
 
-      //  Return
       return { request, sended };
     } catch (error) {
       // Throw error
@@ -86,16 +142,15 @@ class FriendsServices {
     try {
       // Check friend is exists
       const friend = await friendsModel.findOne({
-        "inviter.user": body.inviter.user,
-        "friend.user": body.friend.user,
+        'inviter.user': body.inviter.user,
+        'friend.user': body.friend.user,
       });
 
       // Throw error if friend is exists
-      if (friend)
-        return { status: 400, message: "Đã gửi kết bạn cho người này rồi" };
+      if (friend) throw new Error('Đã kết bạn', HttpStatus.CONFLICT);
 
       // Created
-      await this.create(body);
+      return await this.create(body);
     } catch (error) {
       // Throw Error
       throw new Error(error.message);
@@ -107,6 +162,7 @@ class FriendsServices {
     // Exception
     try {
       // Kiem tra xem 2 nguoi dung co phai ban be khong
+      // Check xem neu co id cua minh o trong inviter hoac trong friend thi duoc coi la du lieu co o trong collection friend
       const isFriend = await friendsModel.findOne({
         $or: [
           {
@@ -139,52 +195,58 @@ class FriendsServices {
   async search(params) {
     // Exception
     try {
-      // Tạo một biến để lưu trữ các điều kiện tìm kiếm
-      const searchConditions = [];
-
-      // Tìm kiếm dựa trên một phần của tên của inviter hoặc friend
-      searchConditions.push({
-        $or: [
-          { "inviter.nickname": { $regex: params.search, $options: 'i' } }, // $regex: Tìm kiếm dựa trên một phần của tên, $options: 'i' để không phân biệt chữ hoa chữ thường
-          { "friend.nickname": { $regex: params.search, $options: 'i' } },
-        ],
-      });
-
-      // Thêm các điều kiện khác (state và block)
-      searchConditions.push({ state: "ACCEPTED" });
-      searchConditions.push({ block: false });
-
-      // Thực hiện truy vấn với các điều kiện tìm kiếm được tổng hợp
+      // Finded
       const finded = await friendsModel
-        .find({ $and: searchConditions })
+        .find({
+          $and: [
+            {
+              $or: [
+                {
+                  $and: [
+                    { "inviter.nickname": params.search },
+                    { "friend.user": params.inviter },
+                  ],
+                },
+                {
+                  $and: [
+                    { "friend.nickname": params.search },
+                    { "inviter.user": params.inviter },
+                  ],
+                },
+              ],
+            },
+            { state: "ACCEPTED" },
+            { block: false },
+          ],
+        })
         .limit(params.limit);
 
-      // Trả về kết quả
+      // Return
+      return finded;
+
+      // Return
       return finded;
     } catch (error) {
       // Throw http exception
       throw new Error(error.message);
     }
-}
-
+  }
 
   //hủy lời mời kết ban
-  async cancel(params) {
+  async cancel(body) {
     // Exception
     try {
-      // Tìm yêu cầu kết bạn ở trạng thái PENDING
-      const deleted = await friendsModel.deleteOne({
-        _id: new mongoose.Types.ObjectId(params),
-      });
+      // Delete
+      const deleted = await friendsModel.deleteOne({ _id: body.id });
 
       // Check
-      if (deleted?.deletedCount !== 0) {
-        // Return
-        return deleted;
-      } else {
+      if (!(deleted && deleted?.deletedCount !== 0)) {
         // Throw error
-        throw new Error("Thu hồi yêu cầu kết bạn không thành công");
+        throw new Error("Huỷ kết bạn không thành công");
       }
+
+      // Return
+      return body;
     } catch (error) {
       // Xử lý lỗi
       throw new Error(error.message);
@@ -192,25 +254,23 @@ class FriendsServices {
   }
 
   //Đồng ý lời mời kb
-  async accept(params) {
+  async accept(body) {
     // Exception
     try {
       // Tìm yêu cầu kết bạn ở trạng thái PENDING
       const updated = await friendsModel.updateOne(
-        {
-          _id: new mongoose.Types.ObjectId(params),
-        },
+        { _id: body.id },
         { state: "ACCEPTED" },
       );
 
       // Check
-      if (updated) {
-        // Return
-        return updated;
-      } else {
+      if (!updated) {
         // Throw error
-        throw new Error("Đồng ý yêu cầu kết bạn thất bại");
+        throw new Error("Đồng ý yêu cầu kết bạn không thành công");
       }
+
+      // Return
+      return body;
     } catch (error) {
       // Xử lý lỗi
       throw new Error(error.message);
@@ -240,6 +300,47 @@ class FriendsServices {
         message: "Đã hủy kết bạn và cập nhật trạng thái thành NOTYET",
       };
     } catch (error) {
+      throw new Error(error.message);
+    }
+  }
+
+  async search_without_rooms(params) {
+    // Exception
+    try {
+      // Exception
+      const finded = await friendsModel
+        .find({
+          $and: [
+            {
+              $or: [
+                {
+                  $and: [
+                    { "inviter.nickname": params.search },
+                    { "friend.user": params.inviter },
+                  ],
+                },
+                {
+                  $and: [
+                    { "friend.nickname": params.search },
+                    { "inviter.user": params.inviter },
+                  ],
+                },
+              ],
+            },
+            { state: "ACCEPTED" },
+            { block: false },
+          ],
+        })
+        .limit(params.limit);
+
+      // If fineded
+      if (finded) {
+        return finded;
+      }
+      // Return
+      return finded;
+    } catch (error) {
+      // Throw http exception
       throw new Error(error.message);
     }
   }
